@@ -1,0 +1,202 @@
+import { useState, useMemo } from 'react'
+import { useManutencoes, useDeleteManutencao, type ManutencaoWithRelations } from '../hooks/useManutencoes'
+import { useCategorias } from '../hooks/useProtocolos'
+import Modal from '../components/Modal'
+import EmptyState from '../components/EmptyState'
+import { Search, History, Eye, CheckSquare, Square, Image as ImageIcon, Trash2 } from 'lucide-react'
+import { format } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
+
+const STATUS_MAP: Record<string, { label: string; cls: string }> = {
+  concluida: { label: 'Concluída', cls: 'badge-ok' },
+  em_andamento: { label: 'Em Andamento', cls: 'badge-accent' },
+  pendente: { label: 'Pendente', cls: 'badge-warn' },
+  cancelada: { label: 'Cancelada', cls: 'badge-danger' },
+}
+
+export default function Historico() {
+  const { data: manutencoes, isLoading } = useManutencoes()
+  const { data: categorias } = useCategorias()
+  const deleteManutencao = useDeleteManutencao()
+
+  const [search, setSearch] = useState('')
+  const [filterStatus, setFilterStatus] = useState('')
+  const [filterTipo, setFilterTipo] = useState('')
+  const [filterCategoria, setFilterCategoria] = useState('')
+  const [detailId, setDetailId] = useState<string | null>(null)
+
+  const filtered = useMemo(() => {
+    if (!manutencoes) return []
+    return manutencoes.filter(m => {
+      const eqName = m.equipamentos?.nome ?? ''
+      const eqPatrimonio = m.equipamentos?.patrimonio ?? ''
+      const tecnicoNome = m.profiles?.nome ?? ''
+
+      const matchSearch = !search ||
+        eqName.toLowerCase().includes(search.toLowerCase()) ||
+        eqPatrimonio.toLowerCase().includes(search.toLowerCase()) ||
+        m.titulo.toLowerCase().includes(search.toLowerCase()) ||
+        tecnicoNome.toLowerCase().includes(search.toLowerCase())
+
+      const matchStatus = !filterStatus || m.status === filterStatus
+      const matchTipo = !filterTipo || m.tipo === filterTipo
+      const matchCategoria = !filterCategoria || (m.equipamentos?.categoria_id === filterCategoria)
+
+      return matchSearch && matchStatus && matchTipo && matchCategoria
+    })
+  }, [manutencoes, search, filterStatus, filterTipo, filterCategoria])
+
+  const detailItem = manutencoes?.find(m => m.id === detailId) as ManutencaoWithRelations | undefined
+
+  const handleDelete = (id: string, titulo: string) => {
+    if (window.confirm(`Tem certeza que deseja deletar a manutenção "${titulo}"?`)) {
+      deleteManutencao.mutate(id)
+    }
+  }
+
+  return (
+    <div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold tracking-tight mb-1" style={{ color: 'var(--color-text-heading)' }}>Histórico</h1>
+        <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>Consulte todas as manutenções realizadas.</p>
+      </div>
+
+      <div className="card mb-6 p-4">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--color-text-muted)' }} />
+            <input className="form-input pl-10" value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por equipamento, patrimônio, técnico..." />
+          </div>
+          <select className="form-select sm:w-44" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+            <option value="">Status: Todos</option>
+            <option value="concluida">Concluída</option>
+            <option value="em_andamento">Em Andamento</option>
+            <option value="pendente">Pendente</option>
+            <option value="cancelada">Cancelada</option>
+          </select>
+          <select className="form-select sm:w-40" value={filterTipo} onChange={e => setFilterTipo(e.target.value)}>
+            <option value="">Tipo: Todos</option>
+            <option value="preventiva">Preventiva</option>
+            <option value="corretiva">Corretiva</option>
+          </select>
+          <select className="form-select sm:w-48" value={filterCategoria} onChange={e => setFilterCategoria(e.target.value)}>
+            <option value="">Categoria: Todas</option>
+            {categorias?.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+          </select>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="flex justify-center py-12">
+          <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--color-accent)', borderTopColor: 'transparent' }} />
+        </div>
+      ) : filtered.length === 0 ? (
+        <EmptyState icon={<History size={48} strokeWidth={1} />} title="Nenhum registro encontrado" description={search || filterStatus || filterTipo || filterCategoria ? 'Tente outros critérios.' : 'O histórico será preenchido conforme manutenções forem executadas.'} />
+      ) : (
+        <div className="card p-0 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Equipamento</th>
+                  <th>Título</th>
+                  <th>Tipo</th>
+                  <th className="hidden sm:table-cell">Data</th>
+                  <th className="hidden md:table-cell">Técnico</th>
+                  <th>Status</th>
+                  <th className="text-right">Ação</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((m, i) => {
+                  const st = STATUS_MAP[m.status] ?? { label: m.status, cls: 'badge-neutral' }
+                  return (
+                    <tr key={m.id} className="animate-fade-in" style={{ animationDelay: `${i * 30}ms` }}>
+                      <td>
+                        <span className="font-medium" style={{ color: 'var(--color-text-heading)' }}>{m.equipamentos?.nome ?? '—'}</span>
+                        <br />
+                        <span className="text-xs font-mono" style={{ color: 'var(--color-text-muted)' }}>#{m.equipamentos?.patrimonio ?? '—'}</span>
+                      </td>
+                      <td>{m.titulo}</td>
+                      <td><span className={`badge ${m.tipo === 'preventiva' ? 'badge-accent' : 'badge-warn'}`}>{m.tipo === 'preventiva' ? 'Prev.' : 'Corr.'}</span></td>
+                      <td className="hidden sm:table-cell">{format(new Date(m.created_at), 'dd/MM/yyyy', { locale: ptBR })}</td>
+                      <td className="hidden md:table-cell">{m.profiles?.nome || m.profiles?.email || '—'}</td>
+                      <td><span className={`badge ${st.cls}`}>{st.label}</span></td>
+                      <td className="text-right flex items-center justify-end gap-2">
+                        <button onClick={() => setDetailId(m.id)} className="btn-ghost text-xs py-1 px-2"><Eye size={14} /> Detalhes</button>
+                        <button onClick={() => handleDelete(m.id, m.titulo)} className="btn-ghost text-xs py-1 px-2" style={{ color: 'var(--color-status-danger)' }} title="Deletar"><Trash2 size={14} /></button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      <Modal open={!!detailId} onClose={() => setDetailId(null)} title="Detalhes da Manutenção" maxWidth="700px">
+        {detailItem && (() => {
+          const st = STATUS_MAP[detailItem.status] ?? { label: detailItem.status, cls: 'badge-neutral' }
+          const checklist = detailItem.checklist_json ?? {}
+
+          return (
+            <div className="flex flex-col gap-5">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Equipamento</span>
+                  <p className="font-medium mt-0.5" style={{ color: 'var(--color-text-heading)' }}>{detailItem.equipamentos?.nome ?? '—'}</p>
+                  <p className="text-xs font-mono" style={{ color: 'var(--color-text-muted)' }}>#{detailItem.equipamentos?.patrimonio ?? '—'}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Status</span>
+                  <div className="mt-1"><span className={`badge ${st.cls}`}>{st.label}</span></div>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Técnico</span>
+                  <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-body)' }}>{detailItem.profiles?.nome || detailItem.profiles?.email || '—'}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Data</span>
+                  <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-body)' }}>{format(new Date(detailItem.created_at), "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: ptBR })}</p>
+                </div>
+              </div>
+              <div style={{ height: '1px', background: 'var(--color-border-default)' }} />
+              {Object.keys(checklist).length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold mb-3" style={{ color: 'var(--color-text-heading)' }}>Checklist</h4>
+                  <div className="flex flex-col gap-1.5">
+                    {Object.entries(checklist).map(([taskId, done]) => (
+                      <div key={taskId} className="flex items-center gap-2 text-sm" style={{ color: done ? 'var(--color-status-ok)' : 'var(--color-text-muted)' }}>
+                        {done ? <CheckSquare size={16} /> : <Square size={16} />}
+                        <span style={{ textDecoration: done ? 'line-through' : 'none' }}>Tarefa {taskId.slice(0, 8)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {detailItem.observacoes && (
+                <div>
+                  <h4 className="text-sm font-semibold mb-2" style={{ color: 'var(--color-text-heading)' }}>Observações</h4>
+                  <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{detailItem.observacoes}</p>
+                </div>
+              )}
+              {detailItem.evidencias.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--color-text-heading)' }}><ImageIcon size={14} /> Registros Fotográficos ({detailItem.evidencias.length})</h4>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    {detailItem.evidencias.map(ev => (
+                      <a key={ev.id} href={ev.foto_url} target="_blank" rel="noopener noreferrer" className="block h-24 overflow-hidden transition-opacity hover:opacity-80" style={{ borderRadius: '2px', border: '1px solid var(--color-border-default)' }}>
+                        <img src={ev.foto_url} alt="" className="w-full h-full object-cover" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })()}
+      </Modal>
+    </div>
+  )
+}
