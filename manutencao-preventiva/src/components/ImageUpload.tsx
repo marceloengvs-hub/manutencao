@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
-import { Upload, X, Image as ImageIcon } from 'lucide-react'
+import { Upload, X, Image as ImageIcon, Camera } from 'lucide-react'
 
 interface ImageUploadProps {
   onUpload: (files: File[]) => void
@@ -12,6 +12,7 @@ interface ImageUploadProps {
 export default function ImageUpload({ onUpload, multiple = false, previews = [], onRemovePreview, uploading }: ImageUploadProps) {
   const [dragging, setDragging] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const cameraRef = useRef<HTMLInputElement>(null)
 
   const handleFiles = useCallback((files: FileList | null) => {
     if (!files) return
@@ -36,17 +37,41 @@ export default function ImageUpload({ onUpload, multiple = false, previews = [],
           className="hidden"
           onChange={(e) => handleFiles(e.target.files)}
         />
+        <input
+          ref={cameraRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={(e) => handleFiles(e.target.files)}
+        />
         {uploading ? (
           <div className="flex flex-col items-center gap-2">
             <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--color-accent)', borderTopColor: 'transparent' }} />
             <span className="text-sm">Enviando...</span>
           </div>
         ) : (
-          <>
-            <Upload size={28} />
-            <span className="text-sm">Clique ou arraste fotos aqui</span>
-            <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Máx. 5MB por arquivo</span>
-          </>
+          <div className="flex flex-col items-center gap-3">
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); cameraRef.current?.click() }}
+                className="btn-secondary flex items-center gap-2 text-sm py-2"
+                style={{ background: 'var(--color-surface-hover)' }}
+              >
+                <Camera size={16} /> Tirar Foto
+              </button>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); inputRef.current?.click() }}
+                className="btn-secondary flex items-center gap-2 text-sm py-2"
+                style={{ background: 'var(--color-surface-hover)' }}
+              >
+                <ImageIcon size={16} /> Galeria
+              </button>
+            </div>
+            <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Arraste imagens ou clique nas opções. Máx 5MB.</span>
+          </div>
         )}
       </div>
 
