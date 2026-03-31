@@ -13,14 +13,14 @@
   --color-surface-card: #1A1A1E;
   --color-surface-hover: #222226;
 
-  --color-border-default: #2A2A30;
-  --color-border-hover: #3A3A42;
+  --color-border-default: #3A3A42;
+  --color-border-hover: #4A4A54;
   --color-border-accent: rgba(249, 115, 22, 0.3);
 
-  --color-text-heading: #F0F0F2;
-  --color-text-body: #CDCDD0;
-  --color-text-secondary: #8E8E96;
-  --color-text-muted: #5A5A62;
+  --color-text-heading: #FFFFFF;
+  --color-text-body: #E8E8ED;
+  --color-text-secondary: #AEAEB6;
+  --color-text-muted: #848492;
 
   --color-status-ok: #22C55E;
   --color-status-ok-bg: rgba(34, 197, 94, 0.12);
