@@ -1,4 +1,5 @@
 import { useEffect, useId, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 
 interface ModalProps {
@@ -35,7 +36,7 @@ export default function Modal({ open, onClose, title, children, footer, maxWidth
   const overlayId = `modal-overlay-${styleId.replace(/:/g, '')}`
   const panelId = `modal-panel-${styleId.replace(/:/g, '')}`
 
-  return (
+  const modalContent = (
     <>
       <style>{`
         #${overlayId} {
@@ -140,4 +141,7 @@ export default function Modal({ open, onClose, title, children, footer, maxWidth
       </div>
     </>
   )
+
+  // Use Portal so the modal escapes any local z-index stacking context
+  return createPortal(modalContent, document.body)
 }
