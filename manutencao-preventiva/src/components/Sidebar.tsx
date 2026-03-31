@@ -7,9 +7,9 @@ import {
   Wrench,
   History,
   LogOut,
-  Cpu,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import BrandIcon from './BrandIcon'
 
 const NAV_ITEMS = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -38,9 +38,9 @@ export default function Sidebar() {
         className="flex items-center gap-3 px-5 shrink-0"
         style={{ height: '64px', borderBottom: '1px solid var(--color-border-default)' }}
       >
-        <Cpu size={22} style={{ color: 'var(--color-accent)' }} />
+        <BrandIcon size={26} />
         <span className="text-base font-bold tracking-tight" style={{ color: 'var(--color-text-heading)' }}>
-          Lab Manager
+          IPE Lab
         </span>
       </div>
 

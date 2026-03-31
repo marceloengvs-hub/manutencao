@@ -1,5 +1,6 @@
 import { useAuth } from '../contexts/AuthContext'
 import { LogOut } from 'lucide-react'
+import BrandIcon from './BrandIcon'
 
 export default function Header({ title }: { title?: string }) {
   const { user, signOut } = useAuth()
@@ -15,6 +16,7 @@ export default function Header({ title }: { title?: string }) {
       }}
     >
       <div className="flex items-center gap-3">
+        <BrandIcon size={22} />
         {title && (
           <h1 className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>
             {title}

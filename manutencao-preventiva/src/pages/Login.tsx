@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { Cpu, Mail, Lock, User, ArrowRight, Loader2 } from 'lucide-react'
+import { Mail, Lock, User, ArrowRight, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import BrandIcon from '../components/BrandIcon'
 
 export default function Login() {
   const { user, loading, signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth()
@@ -63,13 +64,12 @@ export default function Login() {
         <div className="px-8 py-10 flex flex-col items-center">
           {/* Logo */}
           <div
-            className="w-14 h-14 flex items-center justify-center mb-6"
+            className="w-16 h-16 flex items-center justify-center mb-6"
             style={{
-              background: 'var(--color-accent-muted)',
-              borderRadius: '2px',
+              background: 'transparent',
             }}
           >
-            <Cpu size={28} style={{ color: 'var(--color-accent)' }} />
+            <BrandIcon size={64} />
           </div>
 
           <h1

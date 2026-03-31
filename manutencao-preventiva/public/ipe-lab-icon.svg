@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="IPE Lab">
+  <g transform="translate(12 20)">
+    <polygon points="0,20 66,0 152,18 88,38" fill="#f3272a"/>
+    <polygon points="0,20 34,35 34,82 0,67" fill="#e61c24"/>
+    <polygon points="34,35 88,38 88,86 34,82" fill="#f3272a"/>
+
+    <polygon points="16,54 82,34 168,52 104,72" fill="#ffef13"/>
+    <polygon points="16,54 50,69 50,116 16,101" fill="#f5d90f"/>
+    <polygon points="50,69 104,72 104,120 50,116" fill="#ffef13"/>
+
+    <polygon points="34,86 100,66 186,84 122,104" fill="#2d2cf4"/>
+    <polygon points="34,86 68,101 68,148 34,133" fill="#2420d9"/>
+    <polygon points="68,101 122,104 122,152 68,148" fill="#2d2cf4"/>
+
+    <polygon points="0,84 88,104 88,144 0,124" fill="#f3272a"/>
+    <polygon points="16,118 104,138 104,178 16,158" fill="#ffef13"/>
+    <polygon points="34,152 122,172 122,212 34,192" fill="#2d2cf4"/>
+  </g>
+</svg>
