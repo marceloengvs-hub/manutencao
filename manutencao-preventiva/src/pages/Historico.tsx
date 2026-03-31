@@ -3,9 +3,11 @@ import { useManutencoes, useDeleteManutencao, type ManutencaoWithRelations } fro
 import { useCategorias } from '../hooks/useProtocolos'
 import Modal from '../components/Modal'
 import EmptyState from '../components/EmptyState'
-import { Search, History, Eye, CheckSquare, Square, Image as ImageIcon, Trash2 } from 'lucide-react'
+import { Search, History, Eye, CheckSquare, Square, Image as ImageIcon, Trash2, Download } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 const STATUS_MAP: Record<string, { label: string; cls: string }> = {
   concluida: { label: 'Concluída', cls: 'badge-ok' },
@@ -54,11 +56,50 @@ export default function Historico() {
     }
   }
 
+  const handleExportPDF = () => {
+    const doc = new jsPDF()
+
+    doc.setFontSize(16)
+    doc.text('Histórico de Manutenções', 14, 22)
+
+    doc.setFontSize(10)
+    let filterText = `Total de registros: ${filtered.length}`
+    if (search) filterText += ` | Busca: "${search}"`
+    if (filterStatus) filterText += ` | Status: ${STATUS_MAP[filterStatus]?.label || filterStatus}`
+    if (filterTipo) filterText += ` | Tipo: ${filterTipo === 'preventiva' ? 'Preventiva' : 'Corretiva'}`
+    doc.text(filterText, 14, 30)
+
+    const tableColumn = ["Equipamento", "Patrimônio", "Título", "Tipo", "Data", "Status"]
+    const tableRows = filtered.map(m => [
+      m.equipamentos?.nome || '—',
+      m.equipamentos?.patrimonio || '—',
+      m.titulo,
+      m.tipo === 'preventiva' ? 'Preventiva' : 'Corretiva',
+      format(new Date(m.created_at), 'dd/MM/yyyy'),
+      STATUS_MAP[m.status]?.label || m.status
+    ])
+
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 35,
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [249, 115, 22] }, // var(--color-accent) approximation
+    })
+
+    doc.save(`historico-manutencoes-${format(new Date(), 'yyyy-MM-dd')}.pdf`)
+  }
+
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight mb-1" style={{ color: 'var(--color-text-heading)' }}>Histórico</h1>
-        <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>Consulte todas as manutenções realizadas.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight mb-1" style={{ color: 'var(--color-text-heading)' }}>Histórico</h1>
+          <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>Consulte todas as manutenções realizadas.</p>
+        </div>
+        <button onClick={handleExportPDF} className="btn-secondary" disabled={filtered.length === 0}>
+          <Download size={16} /> Exportar PDF
+        </button>
       </div>
 
       <div className="card mb-6 p-4">
