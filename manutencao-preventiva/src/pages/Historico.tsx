@@ -69,14 +69,15 @@ export default function Historico() {
     if (filterTipo) filterText += ` | Tipo: ${filterTipo === 'preventiva' ? 'Preventiva' : 'Corretiva'}`
     doc.text(filterText, 14, 30)
 
-    const tableColumn = ["Equipamento", "Patrimônio", "Título", "Tipo", "Data", "Status"]
+    const tableColumn = ["Equipamento", "Patrimônio", "Título", "Tipo", "Data", "Status", "Observações"]
     const tableRows = filtered.map(m => [
       m.equipamentos?.nome || '—',
       m.equipamentos?.patrimonio || '—',
       m.titulo,
       m.tipo === 'preventiva' ? 'Preventiva' : 'Corretiva',
       format(new Date(m.created_at), 'dd/MM/yyyy'),
-      STATUS_MAP[m.status]?.label || m.status
+      STATUS_MAP[m.status]?.label || m.status,
+      m.observacoes || '—'
     ])
 
     autoTable(doc, {
