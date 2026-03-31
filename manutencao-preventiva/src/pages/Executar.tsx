@@ -7,7 +7,7 @@ import { useStorage } from '../hooks/useStorage'
 import { useAuth } from '../contexts/AuthContext'
 import ImageUpload from '../components/ImageUpload'
 import EmptyState from '../components/EmptyState'
-import { Wrench, Search, CheckSquare, Square, Camera } from 'lucide-react'
+import { CheckSquare, Square, Camera } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function Executar() {
@@ -28,18 +28,8 @@ export default function Executar() {
   const [observacoes, setObservacoes] = useState('')
   const [checklist, setChecklist] = useState<Record<string, boolean>>({})
   const [fotoFiles, setFotoFiles] = useState<File[]>([])
-  
-  // Update search string if prepopulated and equipamentos loads
-  useEffect(() => {
-    if (prefillEqId && equipamentos) {
-      const eq = equipamentos.find(e => e.id === prefillEqId)
-      if (eq) setSearchEq(eq.nome)
-    }
-  }, [prefillEqId, equipamentos])
   const [fotoPreviews, setFotoPreviews] = useState<string[]>([])
-  const [searchEq, setSearchEq] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [showDropdown, setShowDropdown] = useState(false)
 
   const selectedEq = equipamentos?.find(e => e.id === equipamentoId)
 
@@ -63,11 +53,9 @@ export default function Executar() {
     return tasks
   }, [matchingProtocolos])
 
-  const handleSelectEquipamento = useCallback((id: string, nome: string) => {
+  const handleSelectEquipamento = useCallback((id: string) => {
     setEquipamentoId(id)
     setChecklist({})
-    setSearchEq(nome)
-    setShowDropdown(false)
   }, [])
 
   const toggleCheck = (taskId: string) => {
@@ -125,7 +113,6 @@ export default function Executar() {
       setChecklist({})
       setFotoFiles([])
       setFotoPreviews([])
-      setSearchEq('')
       toast.success('Manutenção finalizada com sucesso!')
     } catch {
       toast.error('Erro ao finalizar manutenção.')
@@ -134,10 +121,6 @@ export default function Executar() {
     }
   }
 
-  const filteredEqs = equipamentos?.filter(e =>
-    e.nome.toLowerCase().includes(searchEq.toLowerCase()) ||
-    e.patrimonio.toLowerCase().includes(searchEq.toLowerCase())
-  ) ?? []
 
   return (
     <div className="max-w-3xl">
@@ -149,98 +132,18 @@ export default function Executar() {
       <div className="card">
         <div className="mb-6" style={{ position: 'relative' }}>
           <label className="form-label">Selecionar Ativo *</label>
-
-          {selectedEq ? (
-            <div className="flex items-center gap-2 p-3" style={{ background: 'var(--color-accent-muted)', borderRadius: '2px', border: '1px solid var(--color-border-accent)' }}>
-              <Wrench size={16} style={{ color: 'var(--color-accent)' }} />
-              <span className="text-sm font-medium flex-1" style={{ color: 'var(--color-accent)' }}>{selectedEq.nome}</span>
-              <span className="text-xs font-mono" style={{ color: 'var(--color-text-muted)' }}>#{selectedEq.patrimonio}</span>
-              <button
-                onClick={() => { setEquipamentoId(''); setSearchEq(''); setShowDropdown(true) }}
-                className="text-xs"
-                style={{ color: 'var(--color-text-secondary)', background: 'transparent', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
-              >
-                Alterar
-              </button>
-            </div>
-          ) : (
-            <>
-              <div className="relative">
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--color-text-muted)' }} />
-                <input
-                  className="form-input pl-10"
-                  value={searchEq}
-                  onChange={e => { setSearchEq(e.target.value); setShowDropdown(true) }}
-                  onFocus={() => setShowDropdown(true)}
-                  placeholder="Buscar por nome ou patrimônio..."
-                />
-              </div>
-
-              {showDropdown && (
-                <>
-                  {/* Invisible backdrop to close dropdown when clicking outside */}
-                  <div
-                    style={{ position: 'fixed', inset: 0, zIndex: 5 }}
-                    onClick={() => setShowDropdown(false)}
-                  />
-                  <div
-                    style={{
-                      position: 'absolute',
-                      left: 0,
-                      right: 0,
-                      top: '100%',
-                      zIndex: 10,
-                      marginTop: '4px',
-                      maxHeight: '240px',
-                      overflowY: 'auto',
-                      background: 'var(--color-surface-panel)',
-                      border: '1px solid var(--color-border-hover)',
-                      borderRadius: '2px',
-                      boxShadow: '0 8px 32px -4px rgba(0, 0, 0, 0.5)',
-                    }}
-                  >
-                    {filteredEqs.length === 0 ? (
-                      <p className="text-xs p-4 text-center" style={{ color: 'var(--color-text-muted)' }}>
-                        Nenhum equipamento cadastrado.
-                      </p>
-                    ) : (
-                      filteredEqs.map(eq => (
-                        <button
-                          key={eq.id}
-                          onClick={() => handleSelectEquipamento(eq.id, eq.nome)}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            width: '100%',
-                            textAlign: 'left',
-                            padding: '0.625rem 0.75rem',
-                            fontSize: '0.875rem',
-                            background: 'transparent',
-                            border: 'none',
-                            borderBottom: '1px solid var(--color-border-default)',
-                            color: 'var(--color-text-body)',
-                            cursor: 'pointer',
-                            transition: 'background 0.1s',
-                          }}
-                          onMouseEnter={e => e.currentTarget.style.background = 'var(--color-surface-hover)'}
-                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                        >
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                            <span style={{ fontWeight: 500, color: 'var(--color-text-heading)' }}>{eq.nome}</span>
-                            <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                              {eq.modelo} • {eq.categorias?.nome ?? 'Sem categoria'}
-                            </span>
-                          </div>
-                          <span className="font-mono text-xs" style={{ color: 'var(--color-text-muted)' }}>#{eq.patrimonio}</span>
-                        </button>
-                      ))
-                    )}
-                  </div>
-                </>
-              )}
-            </>
-          )}
+          <select 
+            className="form-select w-full" 
+            value={equipamentoId} 
+            onChange={e => handleSelectEquipamento(e.target.value)}
+          >
+            <option value="">Selecione um ativo...</option>
+            {equipamentos?.map(eq => (
+              <option key={eq.id} value={eq.id}>
+                {eq.nome} - #{eq.patrimonio}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
@@ -297,7 +200,7 @@ export default function Executar() {
         </div>
 
         <div className="flex flex-col sm:flex-row justify-end gap-3 mt-6">
-          <button onClick={() => { setEquipamentoId(''); setTitulo(''); setObservacoes(''); setChecklist({}); setFotoFiles([]); setFotoPreviews([]); setSearchEq('') }} className="btn-secondary">Limpar</button>
+          <button onClick={() => { setEquipamentoId(''); setTitulo(''); setObservacoes(''); setChecklist({}); setFotoFiles([]); setFotoPreviews([]) }} className="btn-secondary">Limpar</button>
           <button onClick={handleSubmit} className="btn-primary" disabled={!equipamentoId || !titulo || submitting}>{submitting ? 'Finalizando...' : 'Finalizar Manutenção'}</button>
         </div>
       </div>
