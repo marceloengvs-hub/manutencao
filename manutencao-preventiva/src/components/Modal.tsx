@@ -6,10 +6,11 @@ interface ModalProps {
   onClose: () => void
   title: string
   children: ReactNode
+  footer?: ReactNode
   maxWidth?: string
 }
 
-export default function Modal({ open, onClose, title, children, maxWidth = '600px' }: ModalProps) {
+export default function Modal({ open, onClose, title, children, footer, maxWidth = '600px' }: ModalProps) {
   useEffect(() => {
     if (open) {
       document.body.style.overflow = 'hidden'
@@ -102,6 +103,20 @@ export default function Modal({ open, onClose, title, children, maxWidth = '600p
         >
           {children}
         </div>
+
+        {/* Footer — fixed at bottom, always visible */}
+        {footer && (
+          <div
+            style={{
+              padding: '1rem 1.5rem',
+              borderTop: '1px solid var(--color-border-default)',
+              flexShrink: 0,
+              background: 'var(--color-surface-panel)',
+            }}
+          >
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   )

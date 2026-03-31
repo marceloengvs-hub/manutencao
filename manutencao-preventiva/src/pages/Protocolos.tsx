@@ -189,7 +189,18 @@ export default function Protocolos() {
         </div>
       )}
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editingId ? 'Editar Protocolo' : 'Novo Protocolo'} maxWidth="640px">
+      <Modal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editingId ? 'Editar Protocolo' : 'Novo Protocolo'}
+        maxWidth="640px"
+        footer={
+          <div className="flex justify-end gap-3">
+            <button onClick={() => setModalOpen(false)} className="btn-secondary">Cancelar</button>
+            <button onClick={handleSubmit} className="btn-primary" disabled={!form.titulo}>{editingId ? 'Salvar Alterações' : 'Criar Protocolo'}</button>
+          </div>
+        }
+      >
         <div className="flex flex-col gap-4">
           <div>
             <label className="form-label">Título do Protocolo *</label>
@@ -252,19 +263,22 @@ export default function Protocolos() {
               <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Adicione as tarefas que compõem este protocolo.</p>
             )}
           </div>
-          <div className="flex justify-end gap-3 mt-2">
-            <button onClick={() => setModalOpen(false)} className="btn-secondary">Cancelar</button>
-            <button onClick={handleSubmit} className="btn-primary" disabled={!form.titulo}>{editingId ? 'Salvar Alterações' : 'Criar Protocolo'}</button>
-          </div>
         </div>
       </Modal>
 
-      <Modal open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)} title="Confirmar Exclusão" maxWidth="400px">
-        <p className="text-sm mb-6" style={{ color: 'var(--color-text-secondary)' }}>Excluir este protocolo também removerá todas as suas tarefas associadas.</p>
-        <div className="flex justify-end gap-3">
-          <button onClick={() => setDeleteConfirm(null)} className="btn-secondary">Cancelar</button>
-          <button onClick={() => deleteConfirm && handleDelete(deleteConfirm)} className="btn-danger">Excluir</button>
-        </div>
+      <Modal
+        open={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        title="Confirmar Exclusão"
+        maxWidth="400px"
+        footer={
+          <div className="flex justify-end gap-3">
+            <button onClick={() => setDeleteConfirm(null)} className="btn-secondary">Cancelar</button>
+            <button onClick={() => deleteConfirm && handleDelete(deleteConfirm)} className="btn-danger">Excluir</button>
+          </div>
+        }
+      >
+        <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>Excluir este protocolo também removerá todas as suas tarefas associadas.</p>
       </Modal>
     </div>
   )

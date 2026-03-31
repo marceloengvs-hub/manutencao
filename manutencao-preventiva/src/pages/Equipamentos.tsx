@@ -202,7 +202,19 @@ export default function Equipamentos() {
         </div>
       )}
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Editar Equipamento' : 'Novo Equipamento'}>
+      <Modal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editing ? 'Editar Equipamento' : 'Novo Equipamento'}
+        footer={
+          <div className="flex justify-end gap-3">
+            <button onClick={() => setModalOpen(false)} className="btn-secondary">Cancelar</button>
+            <button onClick={handleSubmit} className="btn-primary" disabled={!form.nome || !form.patrimonio}>
+              {editing ? 'Salvar Alterações' : 'Cadastrar'}
+            </button>
+          </div>
+        }
+      >
         <div className="flex flex-col gap-4">
           <div>
             <label className="form-label">Nome do Equipamento *</label>
@@ -241,21 +253,22 @@ export default function Equipamentos() {
             <label className="form-label">Foto do Equipamento</label>
             <ImageUpload onUpload={handlePhotoUpload} previews={fotoPreview} onRemovePreview={() => { setFotoUrl(null); setFotoPreview([]) }} uploading={uploading} />
           </div>
-          <div className="flex justify-end gap-3 mt-2">
-            <button onClick={() => setModalOpen(false)} className="btn-secondary">Cancelar</button>
-            <button onClick={handleSubmit} className="btn-primary" disabled={!form.nome || !form.patrimonio}>
-              {editing ? 'Salvar Alterações' : 'Cadastrar'}
-            </button>
-          </div>
         </div>
       </Modal>
 
-      <Modal open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)} title="Confirmar Exclusão" maxWidth="400px">
-        <p className="text-sm mb-6" style={{ color: 'var(--color-text-secondary)' }}>Tem certeza que deseja excluir este equipamento? Esta ação não pode ser desfeita.</p>
-        <div className="flex justify-end gap-3">
-          <button onClick={() => setDeleteConfirm(null)} className="btn-secondary">Cancelar</button>
-          <button onClick={() => deleteConfirm && handleDelete(deleteConfirm)} className="btn-danger">Excluir</button>
-        </div>
+      <Modal
+        open={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        title="Confirmar Exclusão"
+        maxWidth="400px"
+        footer={
+          <div className="flex justify-end gap-3">
+            <button onClick={() => setDeleteConfirm(null)} className="btn-secondary">Cancelar</button>
+            <button onClick={() => deleteConfirm && handleDelete(deleteConfirm)} className="btn-danger">Excluir</button>
+          </div>
+        }
+      >
+        <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>Tem certeza que deseja excluir este equipamento? Esta ação não pode ser desfeita.</p>
       </Modal>
     </div>
   )
