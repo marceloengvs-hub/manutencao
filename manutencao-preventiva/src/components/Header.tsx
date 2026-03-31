@@ -1,7 +1,8 @@
 import { useAuth } from '../contexts/AuthContext'
+import { LogOut } from 'lucide-react'
 
 export default function Header({ title }: { title?: string }) {
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
   const initials = (user?.user_metadata?.full_name || user?.email || 'U').charAt(0).toUpperCase()
 
   return (
@@ -35,6 +36,16 @@ export default function Header({ title }: { title?: string }) {
         >
           {initials}
         </div>
+        
+        {/* Mobile/Tablet Logout Button */}
+        <button
+          onClick={() => signOut()}
+          className="p-1.5 lg:hidden flex items-center justify-center ml-1"
+          style={{ color: 'var(--color-status-danger)', background: 'transparent', border: 'none', cursor: 'pointer' }}
+          title="Sair"
+        >
+          <LogOut size={18} />
+        </button>
       </div>
     </header>
   )
