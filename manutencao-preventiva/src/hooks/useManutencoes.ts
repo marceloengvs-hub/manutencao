@@ -5,7 +5,7 @@ import toast from 'react-hot-toast'
 
 export type ManutencaoWithRelations = Manutencao & {
   equipamentos: (Equipamento & { categorias: { nome: string } | null }) | null
-  protocolos: { titulo: string; periodicidade: string } | null
+  protocolos: { titulo: string; periodicidade: string; tarefas_protocolo?: { id: string; descricao: string }[] } | null
   profiles: { nome: string; email: string } | null
   evidencias: Array<{ id: string; foto_url: string }>
 }
@@ -19,7 +19,7 @@ export function useManutencoes() {
         .select(`
           *,
           equipamentos(id, nome, patrimonio, categoria_id, categorias(nome)),
-          protocolos(titulo, periodicidade),
+          protocolos(titulo, periodicidade, tarefas_protocolo(id, descricao)),
           profiles(nome, email),
           evidencias(id, foto_url)
         `)

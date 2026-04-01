@@ -208,12 +208,19 @@ export default function Historico() {
                 <div>
                   <h4 className="text-sm font-semibold mb-3" style={{ color: 'var(--color-text-heading)' }}>Checklist</h4>
                   <div className="flex flex-col gap-1.5">
-                    {Object.entries(checklist).map(([taskId, done]) => (
-                      <div key={taskId} className="flex items-center gap-2 text-sm" style={{ color: done ? 'var(--color-status-ok)' : 'var(--color-text-muted)' }}>
-                        {done ? <CheckSquare size={16} /> : <Square size={16} />}
-                        <span style={{ textDecoration: done ? 'line-through' : 'none' }}>Tarefa {taskId.slice(0, 8)}</span>
-                      </div>
-                    ))}
+                    {Object.entries(checklist).map(([taskId, done]) => {
+                      const isCustom = taskId.startsWith('custom:');
+                      const taskName = isCustom 
+                        ? taskId.replace('custom:', '') 
+                        : (detailItem.protocolos?.tarefas_protocolo?.find(t => t.id === taskId)?.descricao || `Tarefa ${taskId.slice(0, 8)}`);
+                      
+                      return (
+                        <div key={taskId} className="flex items-center gap-2 text-sm" style={{ color: done ? 'var(--color-status-ok)' : 'var(--color-text-muted)' }}>
+                          {done ? <CheckSquare size={16} /> : <Square size={16} />}
+                          <span style={{ textDecoration: done ? 'line-through' : 'none' }}>{taskName}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}

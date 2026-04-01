@@ -1,5 +1,7 @@
+import { Link } from 'react-router-dom'
 import { useEquipamentos } from '../hooks/useEquipamentos'
-import { useManutencoes } from '../hooks/useManutencoes'
+import { useManutencoes, useAgenda } from '../hooks/useManutencoes'
+import { calculateSchedule } from '../utils/maintenance'
 import {
   HardDrive,
   CheckCircle2,
@@ -11,10 +13,17 @@ import {
 export default function Dashboard() {
   const { data: equipamentos } = useEquipamentos()
   const { data: manutencoes } = useManutencoes()
+  const { data: agendaData } = useAgenda()
 
   const now = new Date()
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
   const weekEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+
+  const allScheduled = calculateSchedule(
+    agendaData?.protocolos ?? [],
+    agendaData?.equipamentos ?? [],
+    manutencoes ?? []
+  )
 
   const totalMaquinas = equipamentos?.length ?? 0
   const concluidas = manutencoes?.filter(
@@ -23,9 +32,10 @@ export default function Dashboard() {
   const atrasadas = manutencoes?.filter(
     m => m.status === 'pendente' && new Date(m.created_at) < now
   ).length ?? 0
-  const previstas = manutencoes?.filter(
-    m => m.status === 'pendente' && new Date(m.created_at) <= weekEnd
-  ).length ?? 0
+  
+  const previstas = allScheduled.filter(
+    item => item.nextDate <= weekEnd || item.isLate
+  ).length
 
   const recentMaintenance = manutencoes?.slice(0, 6) ?? []
 
@@ -36,6 +46,7 @@ export default function Dashboard() {
       icon: HardDrive,
       badge: `${equipamentos?.filter(e => e.status === 'ativo').length ?? 0} ativas`,
       badgeClass: 'badge-ok',
+      path: '/equipamentos',
     },
     {
       label: 'Concluídas (Mês)',
@@ -43,6 +54,7 @@ export default function Dashboard() {
       icon: CheckCircle2,
       badge: 'No mês atual',
       badgeClass: 'badge-accent',
+      path: '/historico',
     },
     {
       label: 'Atrasadas',
@@ -50,6 +62,7 @@ export default function Dashboard() {
       icon: AlertTriangle,
       badge: atrasadas > 0 ? 'Requer atenção' : 'Tudo em dia',
       badgeClass: atrasadas > 0 ? 'badge-danger' : 'badge-ok',
+      path: '/agenda',
     },
     {
       label: 'Previstas (Semana)',
@@ -57,6 +70,7 @@ export default function Dashboard() {
       icon: CalendarClock,
       badge: 'Próx. 7 dias',
       badgeClass: 'badge-neutral',
+      path: '/agenda',
     },
   ]
 
@@ -79,18 +93,26 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
-        {kpis.map((kpi, i) => (
-          <div key={kpi.label} className="kpi-card card-interactive" style={{ animationDelay: `${i * 80}ms` }}>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>{kpi.label}</span>
-              <kpi.icon size={18} style={{ color: 'var(--color-text-muted)' }} />
+        {kpis.map((kpi, i) => {
+          const Content = (
+            <div className="kpi-card card-interactive h-full" style={{ animationDelay: `${i * 80}ms` }}>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>{kpi.label}</span>
+                <kpi.icon size={18} style={{ color: 'var(--color-text-muted)' }} />
+              </div>
+              <span className="text-3xl font-bold font-mono tabular-nums" style={{ color: 'var(--color-text-heading)' }}>{kpi.value}</span>
+              <div className="mt-2">
+                <span className={`badge ${kpi.badgeClass}`}>{kpi.badge}</span>
+              </div>
             </div>
-            <span className="text-3xl font-bold font-mono tabular-nums" style={{ color: 'var(--color-text-heading)' }}>{kpi.value}</span>
-            <div className="mt-2">
-              <span className={`badge ${kpi.badgeClass}`}>{kpi.badge}</span>
-            </div>
-          </div>
-        ))}
+          )
+
+          return (
+            <Link key={kpi.label} to={kpi.path} className="block no-underline">
+              {Content}
+            </Link>
+          )
+        })}
       </div>
 
       <div className="card">

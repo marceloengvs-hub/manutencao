@@ -5,36 +5,12 @@ import ProgressBar from '../components/ProgressBar'
 import EmptyState from '../components/EmptyState'
 import { CalendarClock, AlertTriangle, Clock, ChevronLeft, ChevronRight } from 'lucide-react'
 import { 
-  addDays, addWeeks, addMonths, isBefore, isToday, format,
-  startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, isSameDay, subMonths
+  addDays, addWeeks, addMonths, isSameMonth, isSameDay, format,
+  startOfMonth, endOfMonth, startOfWeek, endOfWeek, subMonths, isToday
 } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { calculateSchedule, type ScheduleItem } from '../utils/maintenance'
 
-interface ScheduleItem {
-  protocoloId: string
-  equipamentoId: string
-  titulo: string
-  equipamentoNome: string
-  equipamentoPatrimonio: string
-  categoria: string
-  periodicidade: string
-  nextDate: Date
-  isLate: boolean
-  isTodayItem: boolean
-  taskCount: number
-  completedTasks: number
-}
-
-function getNextDate(startDate: Date, periodicidade: string, now: Date, latestCompletedDate?: Date): Date {
-  const addFn = periodicidade === 'diaria' ? addDays
-    : periodicidade === 'semanal' ? addWeeks
-    : addMonths
-
-  if (latestCompletedDate) {
-    return addFn(new Date(latestCompletedDate), 1)
-  }
-  return new Date(startDate)
-}
 
 export default function Agenda() {
   const { data: agendaData, isLoading } = useAgenda()
@@ -48,54 +24,7 @@ export default function Agenda() {
   const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1))
 
   const allScheduleItems = useMemo<ScheduleItem[]>(() => {
-    if (!agendaData?.protocolos || !agendaData?.equipamentos) return []
-    const now = new Date()
-    const items: ScheduleItem[] = []
-
-    for (const proto of agendaData.protocolos) {
-      const startDate = new Date(proto.data_inicio + 'T00:00:00')
-      const catName = proto.categorias?.nome ?? '—'
-      const tasks = proto.tarefas_protocolo ?? []
-      const taskCount = tasks.length
-      
-      const matchingEqs = agendaData.equipamentos.filter(
-        eq => {
-          if ((proto as any).equipamento_id) return eq.id === (proto as any).equipamento_id;
-          if (proto.categoria_id) return eq.categoria_id === proto.categoria_id;
-          return true;
-        }
-      )
-
-      for (const eq of matchingEqs) {
-        const related = manutencoes?.filter(
-          m => m.protocolo_id === proto.id && m.equipamento_id === eq.id && m.status !== 'cancelada'
-        ) ?? []
-        
-        const latestCompleted = related.find(m => m.status === 'concluida')
-        const latestCompletedDate = latestCompleted?.completed_at ? new Date(latestCompleted.completed_at) : undefined
-
-        const nextDate = getNextDate(startDate, proto.periodicidade, now, latestCompletedDate)
-        const latestOpen = related.find(m => m.status === 'pendente' || m.status === 'em_andamento')
-        const completedTasks = latestOpen ? Object.values(latestOpen.checklist_json ?? {}).filter(Boolean).length : 0
-
-        items.push({
-          protocoloId: proto.id,
-          equipamentoId: eq.id,
-          titulo: proto.titulo,
-          equipamentoNome: eq.nome,
-          equipamentoPatrimonio: eq.patrimonio,
-          categoria: catName,
-          periodicidade: proto.periodicidade,
-          nextDate,
-          isLate: isBefore(nextDate, now) && !isToday(nextDate),
-          isTodayItem: isToday(nextDate),
-          taskCount,
-          completedTasks,
-        })
-      }
-    }
-    
-    return items.sort((a, b) => a.nextDate.getTime() - b.nextDate.getTime())
+    return calculateSchedule(agendaData?.protocolos ?? [], agendaData?.equipamentos ?? [], manutencoes ?? [])
   }, [agendaData, manutencoes])
 
   const periLabel = (p: string) =>

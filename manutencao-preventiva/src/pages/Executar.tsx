@@ -27,6 +27,8 @@ export default function Executar() {
   const [titulo, setTitulo] = useState(prefillTitle ?? '')
   const [observacoes, setObservacoes] = useState('')
   const [checklist, setChecklist] = useState<Record<string, boolean>>({})
+  const [customTasks, setCustomTasks] = useState<string[]>([])
+  const [newCustomTask, setNewCustomTask] = useState('')
   const [fotoFiles, setFotoFiles] = useState<File[]>([])
   const [fotoPreviews, setFotoPreviews] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
@@ -79,6 +81,16 @@ export default function Executar() {
   const completedCount = Object.values(checklist).filter(Boolean).length
   const totalTasks = allTasks.length
 
+  const handleAddCustomTask = () => {
+    if (!newCustomTask.trim()) return
+    setCustomTasks(prev => [...prev, newCustomTask.trim()])
+    setNewCustomTask('')
+  }
+
+  const removeCustomTask = (index: number) => {
+    setCustomTasks(prev => prev.filter((_, i) => i !== index))
+  }
+
   const handleSubmit = async () => {
     if (!equipamentoId || !titulo) {
       toast.error('Preencha o ativo e o título da manutenção.')
@@ -87,7 +99,12 @@ export default function Executar() {
 
     setSubmitting(true)
     try {
-      const isComplete = completedCount === totalTasks && totalTasks > 0
+      const finalChecklist = { ...checklist }
+      customTasks.forEach(task => {
+        finalChecklist[`custom:${task}`] = true
+      })
+
+      const isComplete = (completedCount === totalTasks && totalTasks > 0) || (tipo === 'corretiva' && customTasks.length > 0)
       const manutencao = await createManutencao.mutateAsync({
         equipamento_id: equipamentoId,
         protocolo_id: matchingProtocolos[0]?.id ?? null,
@@ -95,7 +112,7 @@ export default function Executar() {
         titulo,
         status: isComplete ? 'concluida' : 'em_andamento',
         tecnico_id: user!.id,
-        checklist_json: checklist,
+        checklist_json: finalChecklist,
         observacoes: observacoes || null,
         completed_at: isComplete ? new Date().toISOString() : null,
       })
@@ -111,6 +128,7 @@ export default function Executar() {
       setTitulo('')
       setObservacoes('')
       setChecklist({})
+      setCustomTasks([])
       setFotoFiles([])
       setFotoPreviews([])
       toast.success('Manutenção finalizada com sucesso!')
@@ -186,6 +204,36 @@ export default function Executar() {
             </div>
           )}
         </div>
+
+        {tipo === 'corretiva' && (
+          <div className="mb-6 pt-4 border-t border-dashed" style={{ borderColor: 'var(--color-border-default)' }}>
+            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--color-text-heading)' }}>
+              <CheckSquare size={16} /> Ações da Intervenção
+            </h3>
+            <div className="flex gap-2 mb-4">
+              <input 
+                className="form-input" 
+                value={newCustomTask} 
+                onChange={e => setNewCustomTask(e.target.value)}
+                placeholder="Ex: Troca de fusível, Reparo em fiação..."
+                onKeyDown={e => e.key === 'Enter' && handleAddCustomTask()}
+              />
+              <button type="button" onClick={handleAddCustomTask} className="btn-secondary px-4">Adicionar</button>
+            </div>
+            
+            {customTasks.length > 0 && (
+              <div className="flex flex-col gap-2">
+                {customTasks.map((task, idx) => (
+                  <div key={idx} className="flex items-center gap-2 p-2 rounded bg-opacity-10 bg-accent transition-colors group" style={{ backgroundColor: 'rgba(249, 115, 22, 0.05)' }}>
+                    <CheckSquare size={16} style={{ color: 'var(--color-status-ok)' }} />
+                    <span className="flex-1 text-sm">{task}</span>
+                    <button onClick={() => removeCustomTask(idx)} className="text-xs opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--color-status-danger)' }}>Remover</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="my-6" style={{ height: '1px', background: 'var(--color-border-default)' }} />
 
