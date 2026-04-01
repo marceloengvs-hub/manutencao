@@ -29,14 +29,23 @@ export default function Header({ title }: { title?: string }) {
           {user?.user_metadata?.full_name || user?.email}
         </span>
         <div
-          className="w-8 h-8 flex items-center justify-center text-xs font-bold"
+          className="w-8 h-8 flex items-center justify-center text-xs font-bold overflow-hidden"
           style={{
             background: 'var(--color-accent-muted)',
             color: 'var(--color-accent)',
             borderRadius: '2px',
           }}
         >
-          {initials}
+          {user?.user_metadata?.avatar_url ? (
+            <img 
+              src={user.user_metadata.avatar_url} 
+              alt="Avatar" 
+              className="w-full h-full object-cover"
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            initials
+          )}
         </div>
         
         {/* Mobile/Tablet Logout Button */}
