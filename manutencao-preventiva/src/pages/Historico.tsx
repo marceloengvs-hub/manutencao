@@ -1,3 +1,8 @@
+import { useState, useMemo } from 'react'
+import { useManutencoes, useDeleteManutencao, type ManutencaoWithRelations } from '../hooks/useManutencoes'
+import { useCategorias } from '../hooks/useProtocolos'
+import Modal from '../components/Modal'
+import EmptyState from '../components/EmptyState'
 import { Search, History, Eye, CheckSquare, Square, Image as ImageIcon, Trash2, Download, SlidersHorizontal, X } from 'lucide-react'
 import { format, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
