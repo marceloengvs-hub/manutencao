@@ -1,10 +1,5 @@
-import { useState, useMemo } from 'react'
-import { useManutencoes, useDeleteManutencao, type ManutencaoWithRelations } from '../hooks/useManutencoes'
-import { useCategorias } from '../hooks/useProtocolos'
-import Modal from '../components/Modal'
-import EmptyState from '../components/EmptyState'
-import { Search, History, Eye, CheckSquare, Square, Image as ImageIcon, Trash2, Download } from 'lucide-react'
-import { format } from 'date-fns'
+import { Search, History, Eye, CheckSquare, Square, Image as ImageIcon, Trash2, Download, SlidersHorizontal, X } from 'lucide-react'
+import { format, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -25,7 +20,12 @@ export default function Historico() {
   const [filterStatus, setFilterStatus] = useState('')
   const [filterTipo, setFilterTipo] = useState('')
   const [filterCategoria, setFilterCategoria] = useState('')
+  const [filterDateStart, setFilterDateStart] = useState('')
+  const [filterDateEnd, setFilterDateEnd] = useState('')
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
   const [detailId, setDetailId] = useState<string | null>(null)
+
+  const hasActiveFilters = !!(filterStatus || filterTipo || filterCategoria || filterDateStart || filterDateEnd)
 
   const filtered = useMemo(() => {
     if (!manutencoes) return []
@@ -44,9 +44,22 @@ export default function Historico() {
       const matchTipo = !filterTipo || m.tipo === filterTipo
       const matchCategoria = !filterCategoria || (m.equipamentos?.categoria_id === filterCategoria)
 
-      return matchSearch && matchStatus && matchTipo && matchCategoria
+      let matchDate = true
+      if (filterDateStart || filterDateEnd) {
+        const createdDate = new Date(m.created_at)
+        if (filterDateStart) {
+          const start = startOfDay(new Date(filterDateStart + 'T00:00:00'))
+          if (isBefore(createdDate, start)) matchDate = false
+        }
+        if (filterDateEnd) {
+          const end = endOfDay(new Date(filterDateEnd + 'T00:00:00'))
+          if (isAfter(createdDate, end)) matchDate = false
+        }
+      }
+
+      return matchSearch && matchStatus && matchTipo && matchCategoria && matchDate
     })
-  }, [manutencoes, search, filterStatus, filterTipo, filterCategoria])
+  }, [manutencoes, search, filterStatus, filterTipo, filterCategoria, filterDateStart, filterDateEnd])
 
   const detailItem = manutencoes?.find(m => m.id === detailId) as ManutencaoWithRelations | undefined
 
@@ -67,6 +80,9 @@ export default function Historico() {
     if (search) filterText += ` | Busca: "${search}"`
     if (filterStatus) filterText += ` | Status: ${STATUS_MAP[filterStatus]?.label || filterStatus}`
     if (filterTipo) filterText += ` | Tipo: ${filterTipo === 'preventiva' ? 'Preventiva' : 'Corretiva'}`
+    if (filterDateStart || filterDateEnd) {
+      filterText += ` | Período: ${filterDateStart ? format(new Date(filterDateStart + 'T00:00:00'), 'dd/MM/yyyy') : '...'} até ${filterDateEnd ? format(new Date(filterDateEnd + 'T00:00:00'), 'dd/MM/yyyy') : 'agora'}`
+    }
     doc.text(filterText, 14, 30)
 
     const tableColumn = ["Equipamento", "Patrimônio", "Título", "Tipo", "Data", "Status", "Observações"]
@@ -104,28 +120,85 @@ export default function Historico() {
       </div>
 
       <div className="card mb-6 p-4">
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex gap-2">
           <div className="relative flex-1">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--color-text-muted)' }} />
             <input className="form-input pl-10" value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por equipamento, patrimônio, técnico..." />
           </div>
-          <select className="form-select sm:w-44" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
-            <option value="">Status: Todos</option>
-            <option value="concluida">Concluída</option>
-            <option value="em_andamento">Em Andamento</option>
-            <option value="pendente">Pendente</option>
-            <option value="cancelada">Cancelada</option>
-          </select>
-          <select className="form-select sm:w-40" value={filterTipo} onChange={e => setFilterTipo(e.target.value)}>
-            <option value="">Tipo: Todos</option>
-            <option value="preventiva">Preventiva</option>
-            <option value="corretiva">Corretiva</option>
-          </select>
-          <select className="form-select sm:w-48" value={filterCategoria} onChange={e => setFilterCategoria(e.target.value)}>
-            <option value="">Categoria: Todas</option>
-            {categorias?.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
-          </select>
+          <button 
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            className="btn-secondary px-3 sm:px-4"
+            style={{ 
+              borderColor: hasActiveFilters ? 'var(--color-accent)' : 'var(--color-border-default)',
+              background: hasActiveFilters ? 'var(--color-accent-muted)' : 'transparent',
+              color: hasActiveFilters ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+            }}
+          >
+            <SlidersHorizontal size={16} />
+            <span className="hidden sm:inline ml-2">Filtros</span>
+            {hasActiveFilters && (
+              <span className="ml-2 w-2 h-2 rounded-full" style={{ background: 'var(--color-accent)' }} />
+            )}
+          </button>
         </div>
+
+        {showAdvancedFilters && (
+          <div className="mt-4 pt-4 border-t border-dashed" style={{ borderColor: 'var(--color-border-default)' }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider px-1" style={{ color: 'var(--color-text-muted)' }}>Data Início</label>
+                <input type="date" className="form-input text-xs h-9" value={filterDateStart} onChange={e => setFilterDateStart(e.target.value)} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider px-1" style={{ color: 'var(--color-text-muted)' }}>Data Fim</label>
+                <input type="date" className="form-input text-xs h-9" value={filterDateEnd} onChange={e => setFilterDateEnd(e.target.value)} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider px-1" style={{ color: 'var(--color-text-muted)' }}>Status</label>
+                <select className="form-select text-xs h-9" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+                  <option value="">Todos</option>
+                  <option value="concluida">Concluída</option>
+                  <option value="em_andamento">Em Andamento</option>
+                  <option value="pendente">Pendente</option>
+                  <option value="cancelada">Cancelada</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider px-1" style={{ color: 'var(--color-text-muted)' }}>Tipo</label>
+                <select className="form-select text-xs h-9" value={filterTipo} onChange={e => setFilterTipo(e.target.value)}>
+                  <option value="">Todos</option>
+                  <option value="preventiva">Preventiva</option>
+                  <option value="corretiva">Corretiva</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider px-1" style={{ color: 'var(--color-text-muted)' }}>Categoria</label>
+                <select className="form-select text-xs h-9" value={filterCategoria} onChange={e => setFilterCategoria(e.target.value)}>
+                  <option value="">Todas</option>
+                  {categorias?.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                </select>
+              </div>
+            </div>
+            
+            {hasActiveFilters && (
+              <div className="flex justify-end mt-3">
+                <button 
+                  onClick={() => {
+                    setFilterStatus('')
+                    setFilterTipo('')
+                    setFilterCategoria('')
+                    setFilterDateStart('')
+                    setFilterDateEnd('')
+                  }}
+                  className="text-[11px] font-medium flex items-center gap-1 hover:underline"
+                  style={{ color: 'var(--color-status-danger)' }}
+                >
+                  <X size={12} /> Limpar Filtros
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {isLoading ? (
@@ -133,7 +206,7 @@ export default function Historico() {
           <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--color-accent)', borderTopColor: 'transparent' }} />
         </div>
       ) : filtered.length === 0 ? (
-        <EmptyState icon={<History size={48} strokeWidth={1} />} title="Nenhum registro encontrado" description={search || filterStatus || filterTipo || filterCategoria ? 'Tente outros critérios.' : 'O histórico será preenchido conforme manutenções forem executadas.'} />
+        <EmptyState icon={<History size={48} strokeWidth={1} />} title="Nenhum registro encontrado" description={search || hasActiveFilters ? 'Tente outros critérios.' : 'O histórico será preenchido conforme manutenções forem executadas.'} />
       ) : (
         <div className="card p-0 overflow-hidden">
           <div className="overflow-x-auto">
