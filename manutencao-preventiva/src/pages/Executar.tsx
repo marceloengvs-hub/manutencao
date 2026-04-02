@@ -23,6 +23,7 @@ export default function Executar() {
   const { uploadMultiple, uploading } = useStorage('evidencias')
 
   const [equipamentoId, setEquipamentoId] = useState(prefillEqId ?? '')
+  const [protocoloId, setProtocoloId] = useState('')
   const [tipo, setTipo] = useState<'preventiva' | 'corretiva'>('preventiva')
   const [titulo, setTitulo] = useState(prefillTitle ?? '')
   const [observacoes, setObservacoes] = useState('')
@@ -45,20 +46,38 @@ export default function Executar() {
     })
   }, [selectedEq, protocolos])
 
-  const allTasks = useMemo(() => {
-    const tasks: Array<{ id: string; descricao: string; protocoloTitulo: string }> = []
-    for (const p of matchingProtocolos) {
-      for (const t of p.tarefas_protocolo) {
-        tasks.push({ id: t.id, descricao: t.descricao, protocoloTitulo: p.titulo })
-      }
+  // Auto-select protocol if there's only one
+  useEffect(() => {
+    if (matchingProtocolos.length === 1 && tipo === 'preventiva' && !protocoloId) {
+      setProtocoloId(matchingProtocolos[0].id)
+      setTitulo(prev => prev || matchingProtocolos[0].titulo)
     }
-    return tasks
-  }, [matchingProtocolos])
+  }, [matchingProtocolos, tipo, protocoloId])
+
+  const allTasks = useMemo(() => {
+    if (tipo === 'corretiva') return []
+    const proto = matchingProtocolos.find(p => p.id === protocoloId)
+    if (!proto) return []
+    
+    return proto.tarefas_protocolo.map(t => ({
+      id: t.id,
+      descricao: t.descricao,
+      protocoloTitulo: proto.titulo
+    }))
+  }, [matchingProtocolos, protocoloId, tipo])
 
   const handleSelectEquipamento = useCallback((id: string) => {
     setEquipamentoId(id)
+    setProtocoloId('')
     setChecklist({})
   }, [])
+
+  const handleSelectProtocolo = (id: string) => {
+    setProtocoloId(id)
+    const proto = matchingProtocolos.find(p => p.id === id)
+    if (proto) setTitulo(proto.titulo)
+    setChecklist({})
+  }
 
   const toggleCheck = (taskId: string) => {
     setChecklist(prev => ({ ...prev, [taskId]: !prev[taskId] }))
@@ -107,7 +126,7 @@ export default function Executar() {
       const isComplete = (completedCount === totalTasks && totalTasks > 0) || (tipo === 'corretiva' && customTasks.length > 0)
       const manutencao = await createManutencao.mutateAsync({
         equipamento_id: equipamentoId,
-        protocolo_id: matchingProtocolos[0]?.id ?? null,
+        protocolo_id: protocoloId || null,
         tipo,
         titulo,
         status: isComplete ? 'concluida' : 'em_andamento',
@@ -148,20 +167,39 @@ export default function Executar() {
       </div>
 
       <div className="card">
-        <div className="mb-6" style={{ position: 'relative' }}>
-          <label className="form-label">Selecionar Ativo *</label>
-          <select 
-            className="form-select w-full" 
-            value={equipamentoId} 
-            onChange={e => handleSelectEquipamento(e.target.value)}
-          >
-            <option value="">Selecione um ativo...</option>
-            {equipamentos?.map(eq => (
-              <option key={eq.id} value={eq.id}>
-                {eq.nome} - Patrimônio: {eq.patrimonio}
-              </option>
-            ))}
-          </select>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+          <div>
+            <label className="form-label">Selecionar Ativo *</label>
+            <select 
+              className="form-select w-full" 
+              value={equipamentoId} 
+              onChange={e => handleSelectEquipamento(e.target.value)}
+            >
+              <option value="">Selecione um ativo...</option>
+              {equipamentos?.map(eq => (
+                <option key={eq.id} value={eq.id}>
+                  {eq.nome} - Patrimônio: {eq.patrimonio}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="form-label">Protocolo de Manutenção {tipo === 'preventiva' && '*'}</label>
+            <select 
+              className="form-select w-full" 
+              value={protocoloId} 
+              onChange={e => handleSelectProtocolo(e.target.value)}
+              disabled={tipo === 'corretiva' || !equipamentoId}
+            >
+              <option value="">{tipo === 'corretiva' ? 'Não se aplica' : 'Selecione o protocolo...'}</option>
+              {matchingProtocolos.map(p => (
+                <option key={p.id} value={p.id}>
+                  {p.titulo}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
@@ -187,8 +225,10 @@ export default function Executar() {
           </div>
           {!equipamentoId ? (
             <p className="text-sm py-4 text-center" style={{ color: 'var(--color-text-muted)' }}>Selecione um equipamento para carregar as tarefas.</p>
-          ) : allTasks.length === 0 ? (
-            <EmptyState title="Sem tarefas definidas" description="Nenhum protocolo ativo encontrado para este equipamento." />
+          ) : tipo === 'preventiva' && !protocoloId ? (
+            <p className="text-sm py-4 text-center" style={{ color: 'var(--color-text-muted)' }}>Por favor, selecione qual protocolo de manutenção deseja executar.</p>
+          ) : tipo === 'preventiva' && allTasks.length === 0 ? (
+            <EmptyState title="Sem tarefas definidas" description="Este protocolo não possui tarefas cadastradas." />
           ) : (
             <div className="flex flex-col gap-2">
               {allTasks.map(task => {
