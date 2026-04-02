@@ -35,6 +35,7 @@ export default function Equipamentos() {
   const [editing, setEditing] = useState<Equipamento | null>(null)
   const [search, setSearch] = useState('')
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
   const [form, setForm] = useState({
     nome: '',
@@ -169,11 +170,13 @@ export default function Equipamentos() {
                 style={{ animationDelay: `${i * 50}ms` }}
               >
                 <div
-                  className="h-36 flex items-center justify-center overflow-hidden"
+                  className="h-36 flex items-center justify-center overflow-hidden cursor-pointer group"
+                  onClick={() => eq.foto_url && setPreviewUrl(eq.foto_url)}
                   style={{ background: 'var(--color-surface-elevated)', borderBottom: '1px solid var(--color-border-default)' }}
+                  title="Clique para ampliar"
                 >
                   {eq.foto_url ? (
-                    <img src={eq.foto_url} alt={eq.nome} className="w-full h-full object-contain p-2" />
+                    <img src={eq.foto_url} alt={eq.nome} className="w-full h-full object-contain p-2 transition-transform duration-300 group-hover:scale-105" />
                   ) : (
                     <HardDrive size={40} style={{ color: 'var(--color-text-muted)' }} />
                   )}
@@ -269,6 +272,18 @@ export default function Equipamentos() {
         }
       >
         <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>Tem certeza que deseja excluir este equipamento? Esta ação não pode ser desfeita.</p>
+      </Modal>
+
+      {/* Preview Modal */}
+      <Modal
+        open={!!previewUrl}
+        onClose={() => setPreviewUrl(null)}
+        title="Visualização do Equipamento"
+        maxWidth="800px"
+      >
+        <div className="flex items-center justify-center bg-black/5 rounded-lg overflow-hidden">
+          <img src={previewUrl || ''} alt="Preview" className="max-w-full max-h-[70vh] object-contain" />
+        </div>
       </Modal>
     </div>
   )
