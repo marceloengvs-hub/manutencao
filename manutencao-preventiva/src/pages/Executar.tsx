@@ -46,13 +46,27 @@ export default function Executar() {
     })
   }, [selectedEq, protocolos])
 
-  // Auto-select protocol if there's only one
+  // Auto-detect protocol based on Title
   useEffect(() => {
-    if (matchingProtocolos.length === 1 && tipo === 'preventiva' && !protocoloId) {
-      setProtocoloId(matchingProtocolos[0].id)
-      setTitulo(prev => prev || matchingProtocolos[0].titulo)
+    if (tipo !== 'preventiva' || !titulo.trim() || !matchingProtocolos) {
+      // If there's only one protocol and title is empty, we can still auto-select it
+      if (matchingProtocolos?.length === 1 && !titulo.trim()) {
+        setProtocoloId(matchingProtocolos[0].id)
+        setTitulo(matchingProtocolos[0].titulo)
+      }
+      return
     }
-  }, [matchingProtocolos, tipo, protocoloId])
+
+    const search = titulo.toLowerCase()
+    const match = matchingProtocolos.find(p => {
+      const pTitle = p.titulo.toLowerCase()
+      return pTitle.includes(search) || search.includes(pTitle)
+    })
+
+    if (match) {
+      setProtocoloId(match.id)
+    }
+  }, [titulo, matchingProtocolos, tipo])
 
   const allTasks = useMemo(() => {
     if (tipo === 'corretiva') return []
@@ -69,15 +83,9 @@ export default function Executar() {
   const handleSelectEquipamento = useCallback((id: string) => {
     setEquipamentoId(id)
     setProtocoloId('')
+    setTitulo('')
     setChecklist({})
   }, [])
-
-  const handleSelectProtocolo = (id: string) => {
-    setProtocoloId(id)
-    const proto = matchingProtocolos.find(p => p.id === id)
-    if (proto) setTitulo(proto.titulo)
-    setChecklist({})
-  }
 
   const toggleCheck = (taskId: string) => {
     setChecklist(prev => ({ ...prev, [taskId]: !prev[taskId] }))
@@ -167,39 +175,20 @@ export default function Executar() {
       </div>
 
       <div className="card">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-          <div>
-            <label className="form-label">Selecionar Ativo *</label>
-            <select 
-              className="form-select w-full" 
-              value={equipamentoId} 
-              onChange={e => handleSelectEquipamento(e.target.value)}
-            >
-              <option value="">Selecione um ativo...</option>
-              {equipamentos?.map(eq => (
-                <option key={eq.id} value={eq.id}>
-                  {eq.nome} - Patrimônio: {eq.patrimonio}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="form-label">Protocolo de Manutenção {tipo === 'preventiva' && '*'}</label>
-            <select 
-              className="form-select w-full" 
-              value={protocoloId} 
-              onChange={e => handleSelectProtocolo(e.target.value)}
-              disabled={tipo === 'corretiva' || !equipamentoId}
-            >
-              <option value="">{tipo === 'corretiva' ? 'Não se aplica' : 'Selecione o protocolo...'}</option>
-              {matchingProtocolos.map(p => (
-                <option key={p.id} value={p.id}>
-                  {p.titulo}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div className="mb-6">
+          <label className="form-label">Selecionar Ativo *</label>
+          <select 
+            className="form-select w-full" 
+            value={equipamentoId} 
+            onChange={e => handleSelectEquipamento(e.target.value)}
+          >
+            <option value="">Selecione um ativo...</option>
+            {equipamentos?.map(eq => (
+              <option key={eq.id} value={eq.id}>
+                {eq.nome} - Patrimônio: {eq.patrimonio}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
@@ -226,7 +215,25 @@ export default function Executar() {
           {!equipamentoId ? (
             <p className="text-sm py-4 text-center" style={{ color: 'var(--color-text-muted)' }}>Selecione um equipamento para carregar as tarefas.</p>
           ) : tipo === 'preventiva' && !protocoloId ? (
-            <p className="text-sm py-4 text-center" style={{ color: 'var(--color-text-muted)' }}>Por favor, selecione qual protocolo de manutenção deseja executar.</p>
+            <div className="text-center py-6 border-2 border-dashed rounded-lg" style={{ borderColor: 'var(--color-border-default)' }}>
+              <p className="text-sm italic" style={{ color: 'var(--color-text-muted)' }}>
+                Dica: Digite "semanal" ou "mensal" no título para carregar o checklist automaticamente.
+              </p>
+              {matchingProtocolos.length > 0 && (
+                <div className="mt-3 flex flex-wrap justify-center gap-2">
+                  {matchingProtocolos.map(p => (
+                    <button 
+                      key={p.id} 
+                      onClick={() => { setProtocoloId(p.id); setTitulo(p.titulo); }}
+                      className="text-[10px] px-2 py-1 rounded bg-accent/10 hover:bg-accent/20 transition-colors uppercase font-bold tracking-wider"
+                      style={{ color: 'var(--color-accent)' }}
+                    >
+                      {p.titulo}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           ) : tipo === 'preventiva' && allTasks.length === 0 ? (
             <EmptyState title="Sem tarefas definidas" description="Este protocolo não possui tarefas cadastradas." />
           ) : (
