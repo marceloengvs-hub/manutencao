@@ -235,7 +235,7 @@ export default function Historico() {
                       <td>
                         <span className="font-medium" style={{ color: 'var(--color-text-heading)' }}>{m.equipamentos?.nome ?? '—'}</span>
                         <br />
-                        <span className="text-xs font-mono" style={{ color: 'var(--color-text-muted)' }}>#{m.equipamentos?.patrimonio ?? '—'}</span>
+                        <span className="text-xs font-mono" style={{ color: 'var(--color-text-muted)' }}>Patrimônio: {m.equipamentos?.patrimonio ?? '—'}</span>
                       </td>
                       <td>{m.titulo}</td>
                       <td><span className={`badge ${m.tipo === 'preventiva' ? 'badge-accent' : 'badge-warn'}`}>{m.tipo === 'preventiva' ? 'Prev.' : 'Corr.'}</span></td>
@@ -266,7 +266,7 @@ export default function Historico() {
                 <div>
                   <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Equipamento</span>
                   <p className="font-medium mt-0.5" style={{ color: 'var(--color-text-heading)' }}>{detailItem.equipamentos?.nome ?? '—'}</p>
-                  <p className="text-xs font-mono" style={{ color: 'var(--color-text-muted)' }}>#{detailItem.equipamentos?.patrimonio ?? '—'}</p>
+                  <p className="text-xs font-mono" style={{ color: 'var(--color-text-muted)' }}>Patrimônio: {detailItem.equipamentos?.patrimonio ?? '—'}</p>
                 </div>
                 <div>
                   <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Status</span>

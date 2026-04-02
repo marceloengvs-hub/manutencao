@@ -218,7 +218,7 @@ export default function Protocolos() {
               <label className="form-label">Relacionar ao Ativo (Opcional)</label>
               <select className="form-select" value={form.equipamento_id} onChange={e => setForm(f => ({ ...f, equipamento_id: e.target.value, categoria_id: e.target.value ? '' : f.categoria_id }))}>
                 <option value="">Aplicar à Categoria</option>
-                {equipamentos?.map(eq => <option key={eq.id} value={eq.id}>{eq.nome} (#{eq.patrimonio})</option>)}
+                {equipamentos?.map(eq => <option key={eq.id} value={eq.id}>{eq.nome} (Patrimônio: {eq.patrimonio})</option>)}
               </select>
             </div>
           </div>

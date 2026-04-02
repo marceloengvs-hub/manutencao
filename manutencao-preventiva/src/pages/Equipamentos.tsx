@@ -188,7 +188,7 @@ export default function Equipamentos() {
                   </div>
                   <p className="text-xs mb-1" style={{ color: 'var(--color-text-secondary)' }}>{eq.modelo}</p>
                   <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Cat: {cat}</p>
-                  <p className="text-xs font-mono mt-auto pt-3" style={{ color: 'var(--color-text-muted)' }}>#{eq.patrimonio}</p>
+                  <p className="text-xs font-mono mt-auto pt-3" style={{ color: 'var(--color-text-muted)' }}>Patrimônio: {eq.patrimonio}</p>
                 </div>
                 <div className="flex" style={{ borderTop: '1px solid var(--color-border-default)' }}>
                   <button onClick={() => openEdit(eq)} className="btn-ghost flex-1 py-2.5 text-sm gap-1.5">

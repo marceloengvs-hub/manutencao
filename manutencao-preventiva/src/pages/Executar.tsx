@@ -158,7 +158,7 @@ export default function Executar() {
             <option value="">Selecione um ativo...</option>
             {equipamentos?.map(eq => (
               <option key={eq.id} value={eq.id}>
-                {eq.nome} - #{eq.patrimonio}
+                {eq.nome} - Patrimônio: {eq.patrimonio}
               </option>
             ))}
           </select>
