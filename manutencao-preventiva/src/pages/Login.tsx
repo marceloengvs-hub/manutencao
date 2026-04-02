@@ -76,7 +76,7 @@ export default function Login() {
             className="text-2xl font-bold tracking-tight mb-1"
             style={{ color: 'var(--color-text-heading)' }}
           >
-            Lab Manager
+            IPElab MAN
           </h1>
           <p className="text-sm mb-6" style={{ color: 'var(--color-text-muted)' }}>
             Sistema de Manutenção Preventiva

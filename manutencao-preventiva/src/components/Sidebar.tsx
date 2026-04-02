@@ -40,7 +40,7 @@ export default function Sidebar() {
       >
         <BrandIcon size={26} />
         <span className="text-base font-bold tracking-tight" style={{ color: 'var(--color-text-heading)' }}>
-          IPE Lab
+          IPElab MAN
         </span>
       </div>
 
