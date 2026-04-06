@@ -324,12 +324,12 @@ export default function Historico() {
                           const categoryProtocols = (detailItem as any).equipamentos?.categorias?.protocolos || [];
                           
                           // 1. Busca Direta no Protocolo Vinculado
-                          let match = currentProtoTasks.find(t => t.id === taskId);
+                          let match = currentProtoTasks.find((t: any) => t.id === taskId);
 
                           // 2. Busca Global em todos os protocolos da Categoria
                           if (!match) {
                             const allCategoryTasks = categoryProtocols.flatMap((p: any) => p.tarefas_protocolo || []);
-                            match = allCategoryTasks.find(t => t.id === taskId);
+                            match = allCategoryTasks.find((t: any) => t.id === taskId);
                           }
 
                           // 3. NOVO: Busca em outros registros de manutenção (Cross-healing)
@@ -338,10 +338,12 @@ export default function Historico() {
                             const similarMaintenance = manutencoes?.find(prev => 
                               prev.titulo === detailItem.titulo && 
                               prev.equipamento_id === detailItem.equipamento_id &&
-                              prev.checklist_json?.[taskId]?.descricao
+                              prev.checklist_json &&
+                              typeof prev.checklist_json[taskId] === 'object' &&
+                              (prev.checklist_json[taskId] as any)?.descricao
                             );
-                            if (similarMaintenance) {
-                              taskName = similarMaintenance.checklist_json[taskId].descricao;
+                            if (similarMaintenance && similarMaintenance.checklist_json) {
+                              taskName = (similarMaintenance.checklist_json[taskId] as any).descricao;
                             }
                           }
 
