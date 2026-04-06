@@ -136,12 +136,14 @@ export interface Database {
           tecnico_id: string
           checklist_json?: Record<string, boolean | { concluida: boolean; descricao: string }> | null
           observacoes?: string | null
+          created_at?: string | null
           completed_at?: string | null
         }
         Update: {
           status?: 'pendente' | 'em_andamento' | 'concluida' | 'cancelada'
           checklist_json?: Record<string, boolean | { concluida: boolean; descricao: string }> | null
           observacoes?: string | null
+          created_at?: string | null
           completed_at?: string | null
         }
       }
