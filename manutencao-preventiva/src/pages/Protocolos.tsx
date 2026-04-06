@@ -43,7 +43,7 @@ export default function Protocolos() {
     status: 'ativo' as 'ativo' | 'inativo',
     data_inicio: new Date().toISOString().split('T')[0],
   })
-  const [tarefas, setTarefas] = useState<string[]>([])
+  const [tarefas, setTarefas] = useState<Array<{ id?: string; descricao: string }>>([])
   const [novaTarefa, setNovaTarefa] = useState('')
 
   const openCreate = () => {
@@ -64,7 +64,7 @@ export default function Protocolos() {
       status: proto.status,
       data_inicio: new Date().toISOString().split('T')[0],
     })
-    setTarefas(proto.tarefas_protocolo?.map(t => t.descricao) ?? [])
+    setTarefas(proto.tarefas_protocolo?.map(t => ({ descricao: t.descricao })) ?? [])
     setNovaTarefa('')
     setModalOpen(true)
   }
@@ -79,14 +79,14 @@ export default function Protocolos() {
       status: proto.status,
       data_inicio: proto.data_inicio,
     })
-    setTarefas(proto.tarefas_protocolo?.map(t => t.descricao) ?? [])
+    setTarefas(proto.tarefas_protocolo?.map(t => ({ id: t.id, descricao: t.descricao })) ?? [])
     setNovaTarefa('')
     setModalOpen(true)
   }
 
   const addTarefa = () => {
     if (novaTarefa.trim()) {
-      setTarefas(t => [...t, novaTarefa.trim()])
+      setTarefas(t => [...t, { descricao: novaTarefa.trim() }])
       setNovaTarefa('')
     }
   }
@@ -116,7 +116,7 @@ export default function Protocolos() {
         status: form.status,
         data_inicio: form.data_inicio,
         user_id: user!.id,
-        tarefas,
+        tarefas: tarefas.map(t => t.descricao),
       })
     }
     setModalOpen(false)
@@ -254,7 +254,7 @@ export default function Protocolos() {
                 {tarefas.map((t, i) => (
                   <div key={i} className="flex items-center gap-2 px-3 py-2" style={{ background: 'var(--color-surface-elevated)', border: '1px solid var(--color-border-default)', borderRadius: '2px' }}>
                     <GripVertical size={14} style={{ color: 'var(--color-text-muted)' }} />
-                    <span className="flex-1 text-sm" style={{ color: 'var(--color-text-body)' }}>{t}</span>
+                    <span className="flex-1 text-sm" style={{ color: 'var(--color-text-body)' }}>{t.descricao}</span>
                     <button onClick={() => removeTarefa(i)} style={{ color: 'var(--color-status-danger)', background: 'transparent', border: 'none', cursor: 'pointer', padding: '2px' }}><X size={14} /></button>
                   </div>
                 ))}

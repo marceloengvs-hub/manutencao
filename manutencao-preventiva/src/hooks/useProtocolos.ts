@@ -68,7 +68,7 @@ interface UpdateProtocoloInput {
   periodicidade?: string
   status?: string
   data_inicio?: string
-  tarefas?: string[]
+  tarefas?: Array<{ id?: string; descricao: string }>
 }
 
 export function useUpdateProtocolo() {
@@ -79,14 +79,31 @@ export function useUpdateProtocolo() {
       if (error) throw error
 
       if (tarefas) {
-        await supabase.from('tarefas_protocolo').delete().eq('protocolo_id', id)
+        // 1. Buscar IDs atuais no banco
+        const { data: currentTasks } = await supabase
+          .from('tarefas_protocolo')
+          .select('id')
+          .eq('protocolo_id', id)
+        
+        const currentIds = (currentTasks ?? []).map(t => t.id)
+        const incomingIds = tarefas.filter(t => t.id).map(t => t.id!)
+
+        // 2. Deletar tarefas que não estão na nova lista
+        const toDelete = currentIds.filter(cid => !incomingIds.includes(cid))
+        if (toDelete.length > 0) {
+          await supabase.from('tarefas_protocolo').delete().in('id', toDelete)
+        }
+
+        // 3. Upsert das tarefas (as que tem ID atualizam, as sem ID inserem)
         if (tarefas.length > 0) {
-          const rows = tarefas.map((desc, i) => ({
+          const rows = tarefas.map((t, i) => ({
+            ...(t.id ? { id: t.id } : {}),
             protocolo_id: id,
-            descricao: desc,
+            descricao: t.descricao,
             ordem: i,
           }))
-          const { error: tErr } = await supabase.from('tarefas_protocolo').insert(rows as Record<string, unknown>[])
+
+          const { error: tErr } = await supabase.from('tarefas_protocolo').upsert(rows as Record<string, unknown>[])
           if (tErr) throw tErr
         }
       }

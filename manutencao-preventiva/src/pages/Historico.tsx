@@ -6,8 +6,9 @@ import EmptyState from '../components/EmptyState'
 import { Search, History, Eye, CheckSquare, Square, Image as ImageIcon, Trash2, Download, SlidersHorizontal, X } from 'lucide-react'
 import { format, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
+import { jsPDF } from 'jspdf'
+import { autoTable } from 'jspdf-autotable'
+import { toast } from 'react-hot-toast'
 
 const STATUS_MAP: Record<string, { label: string; cls: string }> = {
   concluida: { label: 'Concluída', cls: 'badge-ok' },
@@ -75,41 +76,58 @@ export default function Historico() {
   }
 
   const handleExportPDF = () => {
-    const doc = new jsPDF()
+    try {
+      const doc = new jsPDF()
 
-    doc.setFontSize(16)
-    doc.text('Histórico de Manutenções', 14, 22)
+      doc.setFontSize(16)
+      doc.text('Histórico de Manutenções', 14, 22)
 
-    doc.setFontSize(10)
-    let filterText = `Total de registros: ${filtered.length}`
-    if (search) filterText += ` | Busca: "${search}"`
-    if (filterStatus) filterText += ` | Status: ${STATUS_MAP[filterStatus]?.label || filterStatus}`
-    if (filterTipo) filterText += ` | Tipo: ${filterTipo === 'preventiva' ? 'Preventiva' : 'Corretiva'}`
-    if (filterDateStart || filterDateEnd) {
-      filterText += ` | Período: ${filterDateStart ? format(new Date(filterDateStart + 'T00:00:00'), 'dd/MM/yyyy') : '...'} até ${filterDateEnd ? format(new Date(filterDateEnd + 'T00:00:00'), 'dd/MM/yyyy') : 'agora'}`
+      doc.setFontSize(10)
+      let filterText = `Total de registros: ${filtered.length}`
+      if (search) filterText += ` | Busca: "${search}"`
+      if (filterStatus) filterText += ` | Status: ${STATUS_MAP[filterStatus]?.label || filterStatus}`
+      if (filterTipo) filterText += ` | Tipo: ${filterTipo === 'preventiva' ? 'Preventiva' : 'Corretiva'}`
+      if (filterDateStart || filterDateEnd) {
+        filterText += ` | Período: ${filterDateStart ? format(new Date(filterDateStart + 'T00:00:00'), 'dd/MM/yyyy') : '...'} até ${filterDateEnd ? format(new Date(filterDateEnd + 'T00:00:00'), 'dd/MM/yyyy') : 'agora'}`
+      }
+      doc.text(filterText, 14, 30)
+
+      const tableColumn = ["Equipamento", "Patrimônio", "Título", "Tipo", "Data", "Status", "Observações"]
+      const tableRows = filtered.map(m => [
+        m.equipamentos?.nome || '—',
+        m.equipamentos?.patrimonio || '—',
+        m.titulo,
+        m.tipo === 'preventiva' ? 'Preventiva' : 'Corretiva',
+        format(new Date(m.created_at), 'dd/MM/yyyy'),
+        STATUS_MAP[m.status]?.label || m.status,
+        m.observacoes || '—'
+      ])
+
+      autoTable(doc, {
+        head: [tableColumn],
+        body: tableRows,
+        startY: 35,
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [249, 115, 22] }, // var(--color-accent) approximation
+      })
+
+      // Generate Data URI and trigger download manually
+      // For small files (~25KB), Data URI is extremely reliable for forcing correct naming in Chrome
+      const dataUri = doc.output('dataurlstring')
+      const link = document.createElement('a')
+      const fileName = `historico-manutencoes-${format(new Date(), 'yyyy-MM-dd')}.pdf`
+      
+      link.href = dataUri
+      link.download = fileName
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+
+      toast.success('PDF exportado com sucesso!')
+    } catch (error) {
+      console.error('Erro ao exportar PDF:', error)
+      toast.error('Ocorreu um erro ao gerar o PDF. Tente novamente.')
     }
-    doc.text(filterText, 14, 30)
-
-    const tableColumn = ["Equipamento", "Patrimônio", "Título", "Tipo", "Data", "Status", "Observações"]
-    const tableRows = filtered.map(m => [
-      m.equipamentos?.nome || '—',
-      m.equipamentos?.patrimonio || '—',
-      m.titulo,
-      m.tipo === 'preventiva' ? 'Preventiva' : 'Corretiva',
-      format(new Date(m.created_at), 'dd/MM/yyyy'),
-      STATUS_MAP[m.status]?.label || m.status,
-      m.observacoes || '—'
-    ])
-
-    autoTable(doc, {
-      head: [tableColumn],
-      body: tableRows,
-      startY: 35,
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: [249, 115, 22] }, // var(--color-accent) approximation
-    })
-
-    doc.save(`historico-manutencoes-${format(new Date(), 'yyyy-MM-dd')}.pdf`)
   }
 
   return (
@@ -286,15 +304,65 @@ export default function Historico() {
                 <div>
                   <h4 className="text-sm font-semibold mb-3" style={{ color: 'var(--color-text-heading)' }}>Checklist</h4>
                   <div className="flex flex-col gap-1.5">
-                    {Object.entries(checklist).map(([taskId, done]) => {
-                      const isCustom = taskId.startsWith('custom:');
-                      const taskName = isCustom 
-                        ? taskId.replace('custom:', '') 
-                        : (detailItem.protocolos?.tarefas_protocolo?.find(t => t.id === taskId)?.descricao || `Tarefa ${taskId.slice(0, 8)}`);
+                    {Object.entries(checklist).map(([taskId, status]) => {
+                      // Suporte ao novo formato (objeto) ou legado (booleano)
+                      const isObj = typeof status === 'object' && status !== null;
+                      const done = isObj ? (status as any).concluida : !!status;
+                      
+                      let taskName = '';
+                      if (isObj) {
+                        taskName = (status as any).descricao;
+                      }
+                      
+                      if (!taskName) {
+                        const isCustom = !isObj && taskId.startsWith('custom:');
+                        if (isCustom) {
+                          taskName = taskId.replace('custom:', '');
+                        } else {
+                          // Conjunto expandido de tarefas para "curar" registros órfãos
+                          const currentProtoTasks = detailItem.protocolos?.tarefas_protocolo || [];
+                          const categoryProtocols = (detailItem as any).equipamentos?.categorias?.protocolos || [];
+                          
+                          // 1. Busca Direta no Protocolo Vinculado
+                          let match = currentProtoTasks.find(t => t.id === taskId);
+
+                          // 2. Busca Global em todos os protocolos da Categoria
+                          if (!match) {
+                            const allCategoryTasks = categoryProtocols.flatMap((p: any) => p.tarefas_protocolo || []);
+                            match = allCategoryTasks.find(t => t.id === taskId);
+                          }
+
+                          // 3. Fallback por Título do Protocolo
+                          // (Muitas manutenções antigas têm o mesmo título que o protocolo mas sem o link de protocolo_id)
+                          if (!match && !detailItem.protocolo_id) {
+                            const matchingByTitle = categoryProtocols.find((p: any) => p.titulo === detailItem.titulo);
+                            if (matchingByTitle) {
+                              match = (matchingByTitle.tarefas_protocolo || []).find((t: any) => t.id === taskId);
+                            }
+                          }
+
+                          // 4. Fallback por Posição: Se não achamos pelo ID, usamos a ordem
+                          if (!match) {
+                            // Escolhe a melhor referência (Protocolo vinculado > Protocolo por título > Primeiro da categoria)
+                            const refProto = detailItem.protocolos || 
+                                           categoryProtocols.find((p: any) => p.titulo === detailItem.titulo) ||
+                                           categoryProtocols[0];
+                            
+                            const refTasks = refProto?.tarefas_protocolo || [];
+                            const checklistKeys = Object.keys(checklist);
+                            const currentIdx = checklistKeys.indexOf(taskId);
+                            if (currentIdx !== -1 && refTasks[currentIdx]) {
+                              match = refTasks[currentIdx];
+                            }
+                          }
+                          
+                          taskName = match?.descricao || `Tarefa ${taskId.slice(0, 8)}`;
+                        }
+                      }
                       
                       return (
                         <div key={taskId} className="flex items-center gap-2 text-sm" style={{ color: done ? 'var(--color-status-ok)' : 'var(--color-text-muted)' }}>
-                          {done ? <CheckSquare size={16} /> : <Square size={16} />}
+                          {done ? <CheckSquare size={16} strokeWidth={2.5} /> : <Square size={16} />}
                           <span style={{ textDecoration: done ? 'line-through' : 'none' }}>{taskName}</span>
                         </div>
                       );

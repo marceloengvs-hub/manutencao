@@ -4,8 +4,17 @@ import type { Manutencao, ManutencaoInsert, Equipamento, Protocolo, TarefaProtoc
 import toast from 'react-hot-toast'
 
 export type ManutencaoWithRelations = Manutencao & {
-  equipamentos: (Equipamento & { categorias: { nome: string } | null }) | null
-  protocolos: { titulo: string; periodicidade: string; tarefas_protocolo?: { id: string; descricao: string }[] } | null
+  equipamentos: (Equipamento & { 
+    categorias: { 
+      nome: string; 
+      protocolos?: Array<{ 
+        id: string; 
+        titulo: string; 
+        tarefas_protocolo: Array<{ id: string; descricao: string; ordem: number }> 
+      }> 
+    } | null 
+  }) | null
+  protocolos: { titulo: string; periodicidade: string; tarefas_protocolo?: { id: string; descricao: string; ordem: number }[] } | null
   profiles: { nome: string; email: string } | null
   evidencias: Array<{ id: string; foto_url: string }>
 }
@@ -18,8 +27,14 @@ export function useManutencoes() {
         .from('manutencoes')
         .select(`
           *,
-          equipamentos(id, nome, patrimonio, categoria_id, categorias(nome)),
-          protocolos(titulo, periodicidade, tarefas_protocolo(id, descricao)),
+          equipamentos(
+            id, nome, patrimonio, categoria_id, 
+            categorias(
+              nome,
+              protocolos(id, titulo, tarefas_protocolo(id, descricao, ordem))
+            )
+          ),
+          protocolos(titulo, periodicidade, tarefas_protocolo(id, descricao, ordem)),
           profiles(nome, email),
           evidencias(id, foto_url)
         `)

@@ -126,9 +126,22 @@ export default function Executar() {
 
     setSubmitting(true)
     try {
-      const finalChecklist = { ...checklist }
+      const finalChecklist: Record<string, { concluida: boolean; descricao: string }> = {}
+      
+      // Adiciona tarefas do protocolo (preventiva)
+      allTasks.forEach(task => {
+        finalChecklist[task.id] = {
+          concluida: !!checklist[task.id],
+          descricao: task.descricao
+        }
+      })
+
+      // Adiciona tarefas personalizadas (corretiva ou extras)
       customTasks.forEach(task => {
-        finalChecklist[`custom:${task}`] = true
+        finalChecklist[`custom:${task}`] = {
+          concluida: true,
+          descricao: task
+        }
       })
 
       const isComplete = (completedCount === totalTasks && totalTasks > 0) || (tipo === 'corretiva' && customTasks.length > 0)
