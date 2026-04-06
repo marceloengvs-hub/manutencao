@@ -332,18 +332,29 @@ export default function Historico() {
                             match = allCategoryTasks.find(t => t.id === taskId);
                           }
 
-                          // 3. Fallback por Título do Protocolo
-                          // (Muitas manutenções antigas têm o mesmo título que o protocolo mas sem o link de protocolo_id)
-                          if (!match && !detailItem.protocolo_id) {
+                          // 3. NOVO: Busca em outros registros de manutenção (Cross-healing)
+                          // Se houver outro registro com o mesmo título e equipamento que já tenha a descrição salva
+                          if (!match) {
+                            const similarMaintenance = manutencoes?.find(prev => 
+                              prev.titulo === detailItem.titulo && 
+                              prev.equipamento_id === detailItem.equipamento_id &&
+                              prev.checklist_json?.[taskId]?.descricao
+                            );
+                            if (similarMaintenance) {
+                              taskName = similarMaintenance.checklist_json[taskId].descricao;
+                            }
+                          }
+
+                          // 4. Fallback por Título do Protocolo
+                          if (!match && !taskName && !detailItem.protocolo_id) {
                             const matchingByTitle = categoryProtocols.find((p: any) => p.titulo === detailItem.titulo);
                             if (matchingByTitle) {
                               match = (matchingByTitle.tarefas_protocolo || []).find((t: any) => t.id === taskId);
                             }
                           }
 
-                          // 4. Fallback por Posição: Se não achamos pelo ID, usamos a ordem
-                          if (!match) {
-                            // Escolhe a melhor referência (Protocolo vinculado > Protocolo por título > Primeiro da categoria)
+                          // 5. Fallback por Posição
+                          if (!match && !taskName) {
                             const refProto = detailItem.protocolos || 
                                            categoryProtocols.find((p: any) => p.titulo === detailItem.titulo) ||
                                            categoryProtocols[0];
@@ -356,7 +367,9 @@ export default function Historico() {
                             }
                           }
                           
-                          taskName = match?.descricao || `Tarefa ${taskId.slice(0, 8)}`;
+                          if (!taskName) {
+                            taskName = match?.descricao || `Tarefa ${taskId.slice(0, 8)}`;
+                          }
                         }
                       }
                       
