@@ -1,24 +1,32 @@
 import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useAgenda, useManutencoes } from '../hooks/useManutencoes'
+import { useUpdateProtocolo } from '../hooks/useProtocolos'
 import ProgressBar from '../components/ProgressBar'
 import EmptyState from '../components/EmptyState'
-import { CalendarClock, AlertTriangle, Clock, ChevronLeft, ChevronRight } from 'lucide-react'
+import Modal from '../components/Modal'
+import { CalendarClock, AlertTriangle, Clock, ChevronLeft, ChevronRight, Calendar } from 'lucide-react'
 import { 
   addDays, addWeeks, addMonths, isSameMonth, isSameDay, format,
-  startOfMonth, endOfMonth, startOfWeek, endOfWeek, subMonths, isToday
+  startOfMonth, endOfMonth, startOfWeek, endOfWeek, subMonths, isToday, parseISO
 } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { calculateSchedule, type ScheduleItem } from '../utils/maintenance'
+import toast from 'react-hot-toast'
 
 
 export default function Agenda() {
   const { data: agendaData, isLoading } = useAgenda()
   const { data: manutencoes } = useManutencoes()
+  const updateProtocolo = useUpdateProtocolo()
 
   // Calendar State
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState(new Date())
+  
+  // Reschedule State
+  const [reschedulingTask, setReschedulingTask] = useState<ScheduleItem | null>(null)
+  const [newDate, setNewDate] = useState('')
 
   const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1))
   const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1))
@@ -126,6 +134,21 @@ export default function Agenda() {
     ? [...new Set([...overdueTasks, ...dailyTasks])] 
     : dailyTasks
 
+  const handleReschedule = async () => {
+    if (!reschedulingTask || !newDate) return
+    try {
+      await updateProtocolo.mutateAsync({
+        id: reschedulingTask.protocoloId,
+        data_inicio: newDate
+      })
+      toast.success('Manutenção reagendada com sucesso!')
+      setReschedulingTask(null)
+      setNewDate('')
+    } catch {
+      toast.error('Erro ao reagendar manutenção.')
+    }
+  }
+
   return (
     <div>
       <div className="mb-6">
@@ -188,9 +211,20 @@ export default function Agenda() {
                         </div>
                       )}
                     </div>
-                    <Link to={`/executar?equipamentoId=${item.equipamentoId}&titulo=${encodeURIComponent(item.titulo)}`} className="btn-primary whitespace-nowrap">
-                      {item.completedTasks > 0 ? 'Continuar' : 'Iniciar'}
-                    </Link>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                       <button 
+                         onClick={() => {
+                           setReschedulingTask(item)
+                           setNewDate(format(new Date(), 'yyyy-MM-dd'))
+                         }}
+                         className="btn-secondary whitespace-nowrap bg-opacity-50"
+                       >
+                         Reagendar
+                       </button>
+                       <Link to={`/executar?equipamentoId=${item.equipamentoId}&titulo=${encodeURIComponent(item.titulo)}`} className="btn-primary whitespace-nowrap">
+                         {item.completedTasks > 0 ? 'Continuar' : 'Iniciar'}
+                       </Link>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -198,6 +232,55 @@ export default function Agenda() {
           )}
         </div>
       </div>
+
+      <Modal
+        open={!!reschedulingTask}
+        onClose={() => setReschedulingTask(null)}
+        title="Reagendar Manutenção"
+      >
+        <div className="p-4">
+          <div className="mb-6 flex items-center gap-3 p-3 rounded-lg bg-[var(--color-surface-elevated)]">
+            <div className="p-2 rounded bg-accent/10">
+              <Calendar size={20} className="text-[var(--color-accent)]" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Atividade</p>
+              <p className="text-sm font-bold text-[var(--color-text-heading)]">{reschedulingTask?.titulo}</p>
+              <p className="text-xs text-[var(--color-text-muted)]">{reschedulingTask?.equipamentoNome}</p>
+            </div>
+          </div>
+
+          <div className="mb-6">
+            <label className="form-label mb-2 block">Nova Data Prevista</label>
+            <input 
+              type="date" 
+              className="form-input w-full"
+              value={newDate}
+              onChange={(e) => setNewDate(e.target.value)}
+              min={format(new Date(), 'yyyy-MM-dd')}
+            />
+            <p className="mt-2 text-xs text-[var(--color-text-muted)]">
+              Ao reagendar, a próxima data de manutenção será calculada a partir deste novo dia.
+            </p>
+          </div>
+
+          <div className="flex gap-3 mt-8">
+            <button 
+              onClick={() => setReschedulingTask(null)} 
+              className="btn-secondary flex-1"
+            >
+              Cancelar
+            </button>
+            <button 
+              onClick={handleReschedule} 
+              disabled={!newDate || updateProtocolo.isPending}
+              className="btn-primary flex-1"
+            >
+              {updateProtocolo.isPending ? 'Salvando...' : 'Confirmar'}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

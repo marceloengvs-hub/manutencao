@@ -17,13 +17,25 @@ export interface ScheduleItem {
   completedTasks: number
 }
 
-export function getNextDate(startDate: Date, periodicidade: string, _now: Date, latestCompletedDate?: Date): Date {
+export function getNextDate(startDate: Date, periodicidade: string, now: Date, latestCompletedDate?: Date): Date {
   const addFn = periodicidade === 'diaria' ? addDays
     : periodicidade === 'semanal' ? addWeeks
     : addMonths
 
+  // Se a data de início é Hoje ou no futuro, ela é a próxima data (usado para reagendamento)
+  const isStartFutureOrToday = startDate >= new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  
   if (latestCompletedDate) {
-    return addFn(new Date(latestCompletedDate), 1)
+    const latest = new Date(latestCompletedDate)
+    const nextInCycle = addFn(latest, 1)
+
+    // Se o usuário definiu uma nova data de início que é posterior à última execução, 
+    // ela passa a ser a nova referência, permitindo reagendar para qualquer dia (adiantar ou atrasar)
+    if (isStartFutureOrToday && startDate > latest) {
+      return startDate
+    }
+
+    return nextInCycle
   }
   return new Date(startDate)
 }

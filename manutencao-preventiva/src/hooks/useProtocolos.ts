@@ -54,6 +54,7 @@ export function useCreateProtocolo() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['protocolos'] })
+      qc.invalidateQueries({ queryKey: ['agenda'] })
       toast.success('Protocolo criado!')
     },
     onError: () => toast.error('Erro ao criar protocolo'),
@@ -110,6 +111,7 @@ export function useUpdateProtocolo() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['protocolos'] })
+      qc.invalidateQueries({ queryKey: ['agenda'] })
       toast.success('Protocolo atualizado!')
     },
     onError: () => toast.error('Erro ao atualizar protocolo'),
@@ -125,6 +127,7 @@ export function useDeleteProtocolo() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['protocolos'] })
+      qc.invalidateQueries({ queryKey: ['agenda'] })
       toast.success('Protocolo excluído!')
     },
     onError: () => toast.error('Erro ao excluir protocolo'),

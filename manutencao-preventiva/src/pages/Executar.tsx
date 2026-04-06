@@ -32,6 +32,7 @@ export default function Executar() {
   const [newCustomTask, setNewCustomTask] = useState('')
   const [fotoFiles, setFotoFiles] = useState<File[]>([])
   const [fotoPreviews, setFotoPreviews] = useState<string[]>([])
+  const [dataExecucao, setDataExecucao] = useState(new Date().toISOString().split('T')[0])
   const [submitting, setSubmitting] = useState(false)
 
   const selectedEq = equipamentos?.find(e => e.id === equipamentoId)
@@ -145,6 +146,13 @@ export default function Executar() {
       })
 
       const isComplete = (completedCount === totalTasks && totalTasks > 0) || (tipo === 'corretiva' && customTasks.length > 0)
+      
+      // Combina a data selecionada com o horário atual para precisão
+      const now = new Date()
+      const execDate = new Date(dataExecucao)
+      execDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds())
+      const finalTimestamp = execDate.toISOString()
+
       const manutencao = await createManutencao.mutateAsync({
         equipamento_id: equipamentoId,
         protocolo_id: protocoloId || null,
@@ -154,7 +162,8 @@ export default function Executar() {
         tecnico_id: user!.id,
         checklist_json: finalChecklist,
         observacoes: observacoes || null,
-        completed_at: isComplete ? new Date().toISOString() : null,
+        created_at: finalTimestamp,
+        completed_at: isComplete ? finalTimestamp : null,
       })
 
       if (fotoFiles.length > 0) {
@@ -215,6 +224,16 @@ export default function Executar() {
           <div>
             <label className="form-label">Título *</label>
             <input className="form-input" value={titulo} onChange={e => setTitulo(e.target.value)} placeholder="Ex: Manutenção semanal #12" />
+          </div>
+          <div>
+            <label className="form-label">Data de Execução</label>
+            <input 
+              type="date" 
+              className="form-input" 
+              value={dataExecucao} 
+              onChange={e => setDataExecucao(e.target.value)} 
+              max={new Date().toISOString().split('T')[0]}
+            />
           </div>
         </div>
 
