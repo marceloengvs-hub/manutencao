@@ -15,6 +15,7 @@ export default function Executar() {
   const [searchParams] = useSearchParams()
   const prefillEqId = searchParams.get('equipamentoId')
   const prefillTitle = searchParams.get('titulo')
+  const prefillProtoId = searchParams.get('protocoloId')
   
   const { data: equipamentos } = useEquipamentos()
   const { data: protocolos } = useProtocolos()
@@ -23,7 +24,7 @@ export default function Executar() {
   const { uploadMultiple, uploading } = useStorage('evidencias')
 
   const [equipamentoId, setEquipamentoId] = useState(prefillEqId ?? '')
-  const [protocoloId, setProtocoloId] = useState('')
+  const [protocoloId, setProtocoloId] = useState(prefillProtoId ?? '')
   const [tipo, setTipo] = useState<'preventiva' | 'corretiva'>('preventiva')
   const [titulo, setTitulo] = useState(prefillTitle ?? '')
   const [observacoes, setObservacoes] = useState('')
@@ -145,7 +146,13 @@ export default function Executar() {
         }
       })
 
-      const isComplete = (completedCount === totalTasks && totalTasks > 0) || (tipo === 'corretiva' && customTasks.length > 0)
+      // É considerada concluída se:
+      // 1. Todas as tarefas do protocolo foram marcadas (se houver tarefas)
+      // 2. OU se é uma preventiva que o usuário está finalizando (mesmo sem tarefas detectadas)
+      // 3. OU se é uma corretiva com tarefas personalizadas
+      const hasProtoTasks = totalTasks > 0
+      const allProtoTasksDone = hasProtoTasks && completedCount === totalTasks
+      const isComplete = (tipo === 'preventiva') || (allProtoTasksDone) || (tipo === 'corretiva' && customTasks.length > 0)
       
       // Combina a data selecionada com o horário atual para precisão
       const now = new Date()

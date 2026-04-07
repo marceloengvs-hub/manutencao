@@ -221,7 +221,7 @@ export default function Agenda() {
                        >
                          Reagendar
                        </button>
-                       <Link to={`/executar?equipamentoId=${item.equipamentoId}&titulo=${encodeURIComponent(item.titulo)}`} className="btn-primary whitespace-nowrap">
+                       <Link to={`/executar?equipamentoId=${item.equipamentoId}&titulo=${encodeURIComponent(item.titulo)}&protocoloId=${item.protocoloId}`} className="btn-primary whitespace-nowrap">
                          {item.completedTasks > 0 ? 'Continuar' : 'Iniciar'}
                        </Link>
                     </div>
