@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
 import { Upload, X, Image as ImageIcon, Camera } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 interface ImageUploadProps {
   onUpload: (files: File[]) => void
@@ -16,7 +17,16 @@ export default function ImageUpload({ onUpload, multiple = false, previews = [],
 
   const handleFiles = useCallback((files: FileList | null) => {
     if (!files) return
-    const valid = Array.from(files).filter(f => f.type.startsWith('image/') && f.size <= 5 * 1024 * 1024)
+    const MAX_SIZE = 10 * 1024 * 1024 // 10MB
+    const filesArray = Array.from(files)
+    
+    const valid = filesArray.filter(f => f.type.startsWith('image/') && f.size <= MAX_SIZE)
+    const invalidType = filesArray.filter(f => !f.type.startsWith('image/'))
+    const invalidSize = filesArray.filter(f => f.type.startsWith('image/') && f.size > MAX_SIZE)
+
+    if (invalidType.length > 0) toast.error('Apenas arquivos de imagem são permitidos.')
+    if (invalidSize.length > 0) toast.error('Uma ou mais fotos excedem o limite de 10MB.')
+
     if (valid.length > 0) onUpload(valid)
   }, [onUpload])
 

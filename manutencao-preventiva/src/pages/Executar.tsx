@@ -93,11 +93,11 @@ export default function Executar() {
     setChecklist(prev => ({ ...prev, [taskId]: !prev[taskId] }))
   }
 
-  const handleAddPhotos = (files: File[]) => {
+  const handleAddPhotos = useCallback((files: File[]) => {
     setFotoFiles(prev => [...prev, ...files])
     const previews = files.map(f => URL.createObjectURL(f))
     setFotoPreviews(prev => [...prev, ...previews])
-  }
+  }, [])
 
   const handleRemovePhoto = (index: number) => {
     setFotoFiles(prev => prev.filter((_, i) => i !== index))
