@@ -154,10 +154,12 @@ export default function Executar() {
       const allProtoTasksDone = hasProtoTasks && completedCount === totalTasks
       const isComplete = (tipo === 'preventiva') || (allProtoTasksDone) || (tipo === 'corretiva' && customTasks.length > 0)
       
-      // Combina a data selecionada com o horário atual para precisão
+      // Combina a data selecionada com o horário atual usando o fuso horário LOCAL
+      const [year, month, day] = dataExecucao.split('-').map(Number)
       const now = new Date()
-      const execDate = new Date(dataExecucao)
-      execDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds())
+      const execDate = new Date()
+      execDate.setFullYear(year, month - 1, day)
+      execDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds())
       const finalTimestamp = execDate.toISOString()
 
       const manutencao = await createManutencao.mutateAsync({

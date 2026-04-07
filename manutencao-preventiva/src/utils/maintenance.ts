@@ -29,9 +29,13 @@ export function getNextDate(startDate: Date, periodicidade: string, now: Date, l
     const latest = new Date(latestCompletedDate)
     const nextInCycle = addFn(latest, 1)
 
-    // Se o usuário definiu uma nova data de início que é posterior à última execução, 
-    // ela passa a ser a nova referência, permitindo reagendar para qualquer dia (adiantar ou atrasar)
-    if (isStartFutureOrToday && startDate > latest) {
+    // Ajusta as datas para comparação apenas de Dia/Mês/Ano para evitar erros de milissegundos
+    const startSimple = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate())
+    const latestSimple = new Date(latest.getFullYear(), latest.getMonth(), latest.getDate())
+
+    // Se o usuário definiu uma nova data de início que é posterior ou IGUAL à última execução, 
+    // ela passa a ser a nova referência.
+    if (isStartFutureOrToday && startSimple >= latestSimple) {
       return startDate
     }
 
