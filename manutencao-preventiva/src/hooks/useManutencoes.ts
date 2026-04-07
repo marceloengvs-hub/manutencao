@@ -55,6 +55,7 @@ export function useCreateManutencao() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['manutencoes'] })
+      qc.invalidateQueries({ queryKey: ['agenda'] })
       toast.success('Manutenção registrada!')
     },
     onError: () => toast.error('Erro ao registrar manutenção'),
@@ -70,6 +71,7 @@ export function useUpdateManutencao() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['manutencoes'] })
+      qc.invalidateQueries({ queryKey: ['agenda'] })
       toast.success('Manutenção atualizada!')
     },
     onError: () => toast.error('Erro ao atualizar manutenção'),
@@ -85,6 +87,7 @@ export function useDeleteManutencao() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['manutencoes'] })
+      qc.invalidateQueries({ queryKey: ['agenda'] })
       toast.success('Manutenção deletada com sucesso!')
     },
     onError: () => toast.error('Erro ao deletar manutenção'),
