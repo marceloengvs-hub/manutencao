@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { useManutencoes, useDeleteManutencao, type ManutencaoWithRelations } from '../hooks/useManutencoes'
 import { useCategorias } from '../hooks/useProtocolos'
 import Modal from '../components/Modal'
 import EmptyState from '../components/EmptyState'
-import { Search, History, Eye, CheckSquare, Square, Image as ImageIcon, Trash2, Download, SlidersHorizontal, X } from 'lucide-react'
+import { Search, History, Eye, CheckSquare, Square, Image as ImageIcon, Trash2, Pencil, Download, SlidersHorizontal, X } from 'lucide-react'
 import { format, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { jsPDF } from 'jspdf'
@@ -262,6 +263,7 @@ export default function Historico() {
                       <td><span className={`badge ${st.cls}`}>{st.label}</span></td>
                       <td className="text-right flex items-center justify-end gap-2">
                         <button onClick={() => setDetailId(m.id)} className="btn-ghost text-xs py-1 px-2"><Eye size={14} /> Detalhes</button>
+                        <Link to={`/executar?edit=${m.id}`} className="btn-ghost text-xs py-1 px-2" title="Editar"><Pencil size={14} /></Link>
                         <button onClick={() => handleDelete(m.id, m.titulo)} className="btn-ghost text-xs py-1 px-2" style={{ color: 'var(--color-status-danger)' }} title="Deletar"><Trash2 size={14} /></button>
                       </td>
                     </tr>

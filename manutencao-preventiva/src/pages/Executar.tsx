@@ -1,8 +1,8 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useEquipamentos } from '../hooks/useEquipamentos'
 import { useProtocolos, type ProtocoloWithRelations } from '../hooks/useProtocolos'
-import { useCreateManutencao, useAddEvidencia } from '../hooks/useManutencoes'
+import { useManutencoes, useCreateManutencao, useUpdateManutencao, useAddEvidencia } from '../hooks/useManutencoes'
 import { useStorage } from '../hooks/useStorage'
 import { useAuth } from '../contexts/AuthContext'
 import ImageUpload from '../components/ImageUpload'
@@ -12,14 +12,19 @@ import toast from 'react-hot-toast'
 
 export default function Executar() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const prefillEqId = searchParams.get('equipamentoId')
   const prefillTitle = searchParams.get('titulo')
   const prefillProtoId = searchParams.get('protocoloId')
+  const editId = searchParams.get('edit')
   
   const { data: equipamentos } = useEquipamentos()
   const { data: protocolos } = useProtocolos()
+  const { data: manutencoes } = useManutencoes()
+  
   const createManutencao = useCreateManutencao()
+  const updateManutencao = useUpdateManutencao()
   const addEvidencia = useAddEvidencia()
   const { uploadMultiple, uploading } = useStorage('evidencias')
 
@@ -35,6 +40,42 @@ export default function Executar() {
   const [fotoPreviews, setFotoPreviews] = useState<string[]>([])
   const [dataExecucao, setDataExecucao] = useState(new Date().toISOString().split('T')[0])
   const [submitting, setSubmitting] = useState(false)
+  const [initialLoading, setInitialLoading] = useState(!!editId)
+
+  // Pre-fill for Edit Mode
+  useEffect(() => {
+    if (!editId || !manutencoes) return
+
+    const existing = manutencoes.find(m => m.id === editId)
+    if (existing) {
+      setEquipamentoId(existing.equipamento_id)
+      setProtocoloId(existing.protocolo_id || '')
+      setTipo(existing.tipo as 'preventiva' | 'corretiva')
+      setTitulo(existing.titulo)
+      setObservacoes(existing.observacoes || '')
+      setDataExecucao(new Date(existing.created_at).toISOString().split('T')[0])
+      
+      const checklistData = existing.checklist_json || {}
+      const ck: Record<string, boolean> = {}
+      const ct: string[] = []
+      
+      Object.entries(checklistData).forEach(([key, val]) => {
+        const isObj = typeof val === 'object' && val !== null
+        const done = isObj ? (val as any).concluida : !!val
+        const desc = isObj ? (val as any).descricao : ''
+        
+        if (key.startsWith('custom:')) {
+          ct.push(desc || key.replace('custom:', ''))
+        } else {
+          ck[key] = done
+        }
+      })
+      
+      setChecklist(ck)
+      setCustomTasks(ct)
+      setInitialLoading(false)
+    }
+  }, [editId, manutencoes])
 
   const selectedEq = equipamentos?.find(e => e.id === equipamentoId)
 
@@ -162,34 +203,57 @@ export default function Executar() {
       execDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds())
       const finalTimestamp = execDate.toISOString()
 
-      const manutencao = await createManutencao.mutateAsync({
-        equipamento_id: equipamentoId,
-        protocolo_id: protocoloId || null,
-        tipo,
-        titulo,
-        status: isComplete ? 'concluida' : 'em_andamento',
-        tecnico_id: user!.id,
-        checklist_json: finalChecklist,
-        observacoes: observacoes || null,
-        created_at: finalTimestamp,
-        completed_at: isComplete ? finalTimestamp : null,
-      })
+      let targetId = editId
+      if (editId) {
+        await updateManutencao.mutateAsync({
+          id: editId,
+          equipamento_id: equipamentoId,
+          protocolo_id: protocoloId || null,
+          tipo,
+          titulo,
+          status: isComplete ? 'concluida' : 'em_andamento',
+          checklist_json: finalChecklist,
+          observacoes: observacoes || null,
+          created_at: finalTimestamp,
+          completed_at: isComplete ? finalTimestamp : null,
+        })
+      } else {
+        const manutencao = await createManutencao.mutateAsync({
+          equipamento_id: equipamentoId,
+          protocolo_id: protocoloId || null,
+          tipo,
+          titulo,
+          status: isComplete ? 'concluida' : 'em_andamento',
+          tecnico_id: user!.id,
+          checklist_json: finalChecklist,
+          observacoes: observacoes || null,
+          created_at: finalTimestamp,
+          completed_at: isComplete ? finalTimestamp : null,
+        })
+        targetId = manutencao.id
+      }
 
-      if (fotoFiles.length > 0) {
-        const urls = await uploadMultiple(fotoFiles, manutencao.id)
+      if (fotoFiles.length > 0 && targetId) {
+        const urls = await uploadMultiple(fotoFiles, targetId)
         for (const url of urls) {
-          await addEvidencia.mutateAsync({ manutencao_id: manutencao.id, foto_url: url })
+          await addEvidencia.mutateAsync({ manutencao_id: targetId, foto_url: url })
         }
       }
 
-      setEquipamentoId('')
-      setTitulo('')
-      setObservacoes('')
-      setChecklist({})
-      setCustomTasks([])
-      setFotoFiles([])
-      setFotoPreviews([])
-      toast.success('Manutenção finalizada com sucesso!')
+      if (!editId) {
+        setEquipamentoId('')
+        setTitulo('')
+        setObservacoes('')
+        setChecklist({})
+        setCustomTasks([])
+        setFotoFiles([])
+        setFotoPreviews([])
+      }
+      
+      toast.success(editId ? 'Alterações salvas!' : 'Manutenção finalizada com sucesso!')
+      if (editId) {
+        navigate('/historico')
+      }
     } catch {
       toast.error('Erro ao finalizar manutenção.')
     } finally {
@@ -201,8 +265,12 @@ export default function Executar() {
   return (
     <div className="max-w-3xl">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight mb-1" style={{ color: 'var(--color-text-heading)' }}>Executar Manutenção</h1>
-        <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>Preencha o checklist e envie as evidências fotográficas.</p>
+        <h1 className="text-2xl font-bold tracking-tight mb-1" style={{ color: 'var(--color-text-heading)' }}>
+          {editId ? 'Editar Manutenção' : 'Executar Manutenção'}
+        </h1>
+        <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+          {editId ? 'Atualize os dados da manutenção realizada.' : 'Preencha o checklist e envie as evidências fotográficas.'}
+        </p>
       </div>
 
       <div className="card">
@@ -336,8 +404,15 @@ export default function Executar() {
         </div>
 
         <div className="flex flex-col sm:flex-row justify-end gap-3 mt-6">
-          <button onClick={() => { setEquipamentoId(''); setTitulo(''); setObservacoes(''); setChecklist({}); setFotoFiles([]); setFotoPreviews([]) }} className="btn-secondary">Limpar</button>
-          <button onClick={handleSubmit} className="btn-primary" disabled={!equipamentoId || !titulo || submitting}>{submitting ? 'Finalizando...' : 'Finalizar Manutenção'}</button>
+          {!editId && (
+            <button onClick={() => { setEquipamentoId(''); setTitulo(''); setObservacoes(''); setChecklist({}); setFotoFiles([]); setFotoPreviews([]) }} className="btn-secondary">Limpar</button>
+          )}
+          {editId && (
+            <button onClick={() => navigate('/historico')} className="btn-secondary">Cancelar</button>
+          )}
+          <button onClick={handleSubmit} className="btn-primary" disabled={!equipamentoId || !titulo || submitting || initialLoading}>
+            {submitting ? 'Salvando...' : editId ? 'Salvar Alterações' : 'Finalizar Manutenção'}
+          </button>
         </div>
       </div>
     </div>
