@@ -70,7 +70,9 @@ export function calculateSchedule(
 
     for (const eq of matchingEqs) {
       const related = (manutencoes ?? []).filter(
-        m => m.protocolo_id === proto.id && m.equipamento_id === eq.id && m.status !== 'cancelada'
+        m => m.equipamento_id === eq.id && 
+             (m.protocolo_id === proto.id || m.titulo.toLowerCase().trim() === proto.titulo.toLowerCase().trim()) &&
+             m.status !== 'cancelada'
       )
       
       const latestCompleted = related.find(m => m.status === 'concluida')
