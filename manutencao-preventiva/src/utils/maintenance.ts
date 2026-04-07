@@ -79,7 +79,17 @@ export function calculateSchedule(
       const latestCompletedDate = latestCompleted?.completed_at ? new Date(latestCompleted.completed_at) : undefined
 
       const nextDate = getNextDate(startDate, proto.periodicidade, now, latestCompletedDate)
-      const latestOpen = related.find(m => m.status === 'pendente' || m.status === 'em_andamento')
+      
+      // Só considera como "Em Andamento" se não houver uma concluída hoje ou mais recente
+      let latestOpen = related.find(m => m.status === 'pendente' || m.status === 'em_andamento')
+      
+      if (latestOpen && latestCompletedDate) {
+        const openDate = new Date(latestOpen.created_at)
+        if (latestCompletedDate >= openDate) {
+          latestOpen = undefined // Ignora rascunho antigo se houver conclusão mais recente
+        }
+      }
+
       const completedTasks = latestOpen ? Object.values(latestOpen.checklist_json ?? {}).filter(Boolean).length : 0
 
       items.push({
