@@ -1,5 +1,5 @@
 import { 
-  addDays, addWeeks, addMonths, isBefore, isToday 
+  addDays, isBefore, isToday, startOfDay 
 } from 'date-fns'
 
 export interface ScheduleItem {
@@ -17,31 +17,35 @@ export interface ScheduleItem {
   completedTasks: number
 }
 
-export function getNextDate(startDate: Date, periodicidade: string, now: Date, latestCompletedDate?: Date): Date {
-  const addFn = periodicidade === 'diaria' ? addDays
-    : periodicidade === 'semanal' ? addWeeks
-    : addMonths
+/**
+ * Calcula a próxima data de manutenção com base na periodicidade e na última execução.
+ * - semanal: +7 dias
+ * - mensal:  +30 dias
+ * - diaria:  +1 dia
+ */
+export function getNextDate(
+  startDate: Date,
+  periodicidade: string,
+  latestCompletedDate?: Date
+): Date {
+  const intervalDays = periodicidade === 'diaria' ? 1 : periodicidade === 'semanal' ? 7 : 30
+  const manualDate = startOfDay(new Date(startDate))
 
-  // Se a data de início é Hoje ou no futuro, ela é a próxima data (usado para reagendamento)
-  const isStartFutureOrToday = startDate >= new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  
   if (latestCompletedDate) {
-    const latest = new Date(latestCompletedDate)
-    const nextInCycle = addFn(latest, 1)
+    const base = startOfDay(new Date(latestCompletedDate))
+    const autoNext = addDays(base, intervalDays)
 
-    // Ajusta as datas para comparação apenas de Dia/Mês/Ano para evitar erros de milissegundos
-    const startSimple = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate())
-    const latestSimple = new Date(latest.getFullYear(), latest.getMonth(), latest.getDate())
-
-    // Se o usuário definiu uma nova data de início que é posterior ou IGUAL à última execução, 
-    // ela passa a ser a nova referência.
-    if (isStartFutureOrToday && startSimple >= latestSimple) {
-      return startDate
+    // Se o usuário reagendou para uma data posterior ao próximo ciclo automático,
+    // respeita a escolha manual (data_inicio foi atualizado pelo reagendamento)
+    if (manualDate > autoNext) {
+      return manualDate
     }
 
-    return nextInCycle
+    return autoNext
   }
-  return new Date(startDate)
+
+  // Sem execução: usa data_inicio como referência
+  return manualDate
 }
 
 export function calculateSchedule(
@@ -49,7 +53,7 @@ export function calculateSchedule(
   equipamentos: any[],
   manutencoes: any[]
 ): ScheduleItem[] {
-  const now = new Date()
+  const now = startOfDay(new Date())
   const items: ScheduleItem[] = []
 
   if (!protocolos || !equipamentos) return []
@@ -59,38 +63,88 @@ export function calculateSchedule(
     const catName = proto.categorias?.nome ?? '—'
     const tasks = proto.tarefas_protocolo ?? []
     const taskCount = tasks.length
-    
-    const matchingEqs = equipamentos.filter(
-      eq => {
-        if (proto.equipamento_id) return eq.id === proto.equipamento_id;
-        if (proto.categoria_id) return eq.categoria_id === proto.categoria_id;
-        return true;
-      }
-    )
+
+    const matchingEqs = equipamentos.filter(eq => {
+      if (proto.equipamento_id) return eq.id === proto.equipamento_id
+      if (proto.categoria_id) return eq.categoria_id === proto.categoria_id
+      return true
+    })
 
     for (const eq of matchingEqs) {
+      // Manutenções relacionadas a este protocolo+equipamento, exceto canceladas
       const related = (manutencoes ?? []).filter(
-        m => m.equipamento_id === eq.id && 
-             (m.protocolo_id === proto.id || m.titulo.toLowerCase().trim() === proto.titulo.toLowerCase().trim()) &&
-             m.status !== 'cancelada'
+        m =>
+          m.equipamento_id === eq.id &&
+          (m.protocolo_id === proto.id ||
+            m.titulo.toLowerCase().trim() === proto.titulo.toLowerCase().trim()) &&
+          m.status !== 'cancelada'
       )
-      
-      const latestCompleted = related.find(m => m.status === 'concluida')
-      const latestCompletedDate = latestCompleted?.completed_at ? new Date(latestCompleted.completed_at) : undefined
 
-      const nextDate = getNextDate(startDate, proto.periodicidade, now, latestCompletedDate)
-      
-      // Só considera como "Em Andamento" se não houver uma concluída hoje ou mais recente
-      let latestOpen = related.find(m => m.status === 'pendente' || m.status === 'em_andamento')
-      
+      // Última manutenção concluída, ordenada pela data real de execução (desc)
+      const completedOnes = related
+        .filter(m => m.status === 'concluida')
+        .sort((a, b) => {
+          // Usa completed_at se disponível, senão created_at (registros legados)
+          const dateA = new Date(a.completed_at ?? a.created_at).getTime()
+          const dateB = new Date(b.completed_at ?? b.created_at).getTime()
+          return dateB - dateA
+        })
+
+      const latestCompleted = completedOnes[0]
+
+      // Data base para cálculo: completed_at (preferencial) ou created_at (fallback)
+      const latestCompletedDate = latestCompleted
+        ? startOfDay(new Date(latestCompleted.completed_at ?? latestCompleted.created_at))
+        : undefined
+
+      // Periodicidade efetiva: usa a do protocolo da última manutenção concluída,
+      // com fallback para o protocolo da agenda (para manutenções sem protocolo vinculado)
+      const effectivePeriodicidade =
+        (latestCompleted as any)?.protocolos?.periodicidade ?? proto.periodicidade
+
+      // Próxima data = data da última conclusão + intervalo baseado na periodicidade real
+      const nextDate = getNextDate(startDate, effectivePeriodicidade, latestCompletedDate)
+
+      // Se ainda está dentro do ciclo (próxima data no futuro) e não é hoje,
+      // exibe no calendário mas sem badge de "atrasada" ou "hoje"
+      const isWithinCycle = !!latestCompletedDate && !isBefore(nextDate, now)
+      if (isWithinCycle && !isToday(nextDate)) {
+        items.push({
+          protocoloId: proto.id,
+          equipamentoId: eq.id,
+          titulo: proto.titulo,
+          equipamentoNome: eq.nome,
+          equipamentoPatrimonio: eq.patrimonio,
+          categoria: catName,
+          periodicidade: effectivePeriodicidade,
+          nextDate,
+          isLate: false,
+          isTodayItem: false,
+          taskCount,
+          completedTasks: 0,
+        })
+        continue
+      }
+
+      // Manutenção em aberto (pendente/em_andamento) mais recente,
+      // mas somente se ainda não foi superada por uma conclusão posterior
+      let latestOpen = related
+        .filter(m => m.status === 'pendente' || m.status === 'em_andamento')
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
+
       if (latestOpen && latestCompletedDate) {
-        const openDate = new Date(latestOpen.created_at)
+        const openDate = startOfDay(new Date(latestOpen.created_at))
         if (latestCompletedDate >= openDate) {
-          latestOpen = undefined // Ignora rascunho antigo se houver conclusão mais recente
+          latestOpen = undefined
         }
       }
 
-      const completedTasks = latestOpen ? Object.values(latestOpen.checklist_json ?? {}).filter(Boolean).length : 0
+      const completedTasks = latestOpen
+        ? Object.values(latestOpen.checklist_json ?? {}).filter(Boolean).length
+        : 0
+
+      const isLateItem = isBefore(nextDate, now) && !isToday(nextDate)
+      const isTodayItem = isToday(nextDate)
 
       items.push({
         protocoloId: proto.id,
@@ -99,15 +153,15 @@ export function calculateSchedule(
         equipamentoNome: eq.nome,
         equipamentoPatrimonio: eq.patrimonio,
         categoria: catName,
-        periodicidade: proto.periodicidade,
+        periodicidade: effectivePeriodicidade,
         nextDate,
-        isLate: isBefore(nextDate, now) && !isToday(nextDate),
-        isTodayItem: isToday(nextDate),
+        isLate: isLateItem,
+        isTodayItem,
         taskCount,
         completedTasks,
       })
     }
   }
-  
+
   return items.sort((a, b) => a.nextDate.getTime() - b.nextDate.getTime())
 }
