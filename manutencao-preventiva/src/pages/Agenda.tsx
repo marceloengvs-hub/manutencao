@@ -11,12 +11,14 @@ import {
   startOfMonth, endOfMonth, startOfWeek, endOfWeek, subMonths, isToday
 } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { useAuth } from '../contexts/AuthContext'
 import { calculateSchedule, nextWorkingDay, type ScheduleItem } from '../utils/maintenance'
 import MaintenanceDetails from '../components/MaintenanceDetails'
 
 
 
 export default function Agenda() {
+  const { user } = useAuth()
   const { data: agendaData, isLoading } = useAgenda()
   const { data: manutencoes } = useManutencoes()
   const updateProtocolo = useUpdateProtocolo()
