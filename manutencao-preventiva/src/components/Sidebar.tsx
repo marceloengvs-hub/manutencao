@@ -7,6 +7,7 @@ import {
   Wrench,
   History,
   LogOut,
+  ArrowLeft,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import BrandIcon from './BrandIcon'
@@ -82,8 +83,18 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Logout */}
-      <div className="px-3 py-3" style={{ borderTop: '1px solid var(--color-border-default)' }}>
+      {/* Voltar e Logout */}
+      <div className="px-3 py-3 flex flex-col gap-1" style={{ borderTop: '1px solid var(--color-border-default)' }}>
+        <Link
+          to="/home"
+          className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium w-full transition-colors duration-150"
+          style={{ color: 'var(--color-text-secondary)', borderRadius: '2px', background: 'transparent' }}
+          onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+        >
+          <ArrowLeft size={18} />
+          Voltar ao Portal
+        </Link>
         <button
           onClick={() => signOut()}
           className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium w-full transition-colors duration-150"

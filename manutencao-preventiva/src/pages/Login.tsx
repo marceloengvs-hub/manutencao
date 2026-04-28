@@ -13,7 +13,7 @@ export default function Login() {
   const [nome, setNome] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  if (!loading && user) return <Navigate to="/dashboard" replace />
+  if (!loading && user) return <Navigate to="/home" replace />
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -82,80 +82,86 @@ export default function Login() {
             Sistema de Manutenção Preventiva
           </p>
 
-          {/* Email/Password Form */}
-          <form onSubmit={handleEmailSubmit} className="w-full flex flex-col gap-3 mb-5">
-            {mode === 'register' && (
-              <div className="relative">
-                <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--color-text-muted)' }} />
-                <input
-                  type="text"
-                  placeholder="Nome completo"
-                  value={nome}
-                  onChange={e => setNome(e.target.value)}
-                  className="form-input pl-10"
-                  required
-                />
+          {/* Formulário de E-mail/Senha desabilitado temporariamente */}
+          {false && (
+            <>
+              {/* Email/Password Form */}
+              <form onSubmit={handleEmailSubmit} className="w-full flex flex-col gap-3 mb-5">
+                {mode === 'register' && (
+                  <div className="relative">
+                    <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--color-text-muted)' }} />
+                    <input
+                      type="text"
+                      placeholder="Nome completo"
+                      value={nome}
+                      onChange={e => setNome(e.target.value)}
+                      className="form-input pl-10"
+                      required
+                    />
+                  </div>
+                )}
+                <div className="relative">
+                  <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--color-text-muted)' }} />
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    className="form-input pl-10"
+                    required
+                  />
+                </div>
+                <div className="relative">
+                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--color-text-muted)' }} />
+                  <input
+                    type="password"
+                    placeholder="Senha (mín. 6 caracteres)"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    className="form-input pl-10"
+                    minLength={6}
+                    required
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="btn-primary w-full py-3"
+                  disabled={submitting}
+                  style={{ gap: '8px' }}
+                >
+                  {submitting ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <ArrowRight size={16} />
+                  )}
+                  {mode === 'login' ? 'Entrar' : 'Criar Conta'}
+                </button>
+              </form>
+
+              {/* Toggle mode */}
+              <button
+                type="button"
+                onClick={() => setMode(m => m === 'login' ? 'register' : 'login')}
+                className="text-xs mb-5 transition-colors"
+                style={{
+                  color: 'var(--color-text-secondary)',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                {mode === 'login' ? 'Não tem conta? Criar agora' : 'Já tem conta? Entrar'}
+              </button>
+
+              {/* Divider */}
+              <div className="flex items-center gap-3 w-full mb-5">
+                <div className="flex-1" style={{ height: '1px', background: 'var(--color-border-default)' }} />
+                <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>ou</span>
+                <div className="flex-1" style={{ height: '1px', background: 'var(--color-border-default)' }} />
               </div>
-            )}
-            <div className="relative">
-              <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--color-text-muted)' }} />
-              <input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                className="form-input pl-10"
-                required
-              />
-            </div>
-            <div className="relative">
-              <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--color-text-muted)' }} />
-              <input
-                type="password"
-                placeholder="Senha (mín. 6 caracteres)"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                className="form-input pl-10"
-                minLength={6}
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              className="btn-primary w-full py-3"
-              disabled={submitting}
-              style={{ gap: '8px' }}
-            >
-              {submitting ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <ArrowRight size={16} />
-              )}
-              {mode === 'login' ? 'Entrar' : 'Criar Conta'}
-            </button>
-          </form>
+            </>
+          )}
 
-          {/* Toggle mode */}
-          <button
-            type="button"
-            onClick={() => setMode(m => m === 'login' ? 'register' : 'login')}
-            className="text-xs mb-5 transition-colors"
-            style={{
-              color: 'var(--color-text-secondary)',
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-            }}
-          >
-            {mode === 'login' ? 'Não tem conta? Criar agora' : 'Já tem conta? Entrar'}
-          </button>
-
-          {/* Divider */}
-          <div className="flex items-center gap-3 w-full mb-5">
-            <div className="flex-1" style={{ height: '1px', background: 'var(--color-border-default)' }} />
-            <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>ou</span>
-            <div className="flex-1" style={{ height: '1px', background: 'var(--color-border-default)' }} />
-          </div>
 
           {/* Google Button */}
           <button

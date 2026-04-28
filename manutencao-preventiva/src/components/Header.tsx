@@ -1,5 +1,6 @@
+import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { LogOut } from 'lucide-react'
+import { LogOut, ArrowLeft } from 'lucide-react'
 import BrandIcon from './BrandIcon'
 
 export default function Header({ title }: { title?: string }) {
@@ -16,6 +17,13 @@ export default function Header({ title }: { title?: string }) {
       }}
     >
       <div className="flex items-center gap-3">
+        <Link 
+          to="/home" 
+          className="lg:hidden flex items-center justify-center p-1 mr-1"
+          style={{ color: 'var(--color-text-secondary)' }}
+        >
+          <ArrowLeft size={20} />
+        </Link>
         <BrandIcon size={22} />
         {title && (
           <h1 className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>

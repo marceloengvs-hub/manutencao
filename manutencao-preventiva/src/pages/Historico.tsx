@@ -10,8 +10,10 @@ import { Search, History, Eye, CheckSquare, Square, Image as ImageIcon, Trash2, 
 import { format, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { jsPDF } from 'jspdf'
-import { autoTable } from 'jspdf-autotable'
+import { applyPlugin } from 'jspdf-autotable'
+applyPlugin(jsPDF)
 import { toast } from 'react-hot-toast'
+
 
 const STATUS_MAP: Record<string, { label: string; cls: string }> = {
   concluida: { label: 'Concluída', cls: 'badge-ok' },
@@ -114,32 +116,28 @@ export default function Historico() {
         m.observacoes || '—'
       ])
 
-      autoTable(doc, {
+      ;(doc as any).autoTable({
         head: [tableColumn],
         body: tableRows,
         startY: 35,
         styles: { fontSize: 9 },
-        headStyles: { fillColor: [249, 115, 22] }, // var(--color-accent) approximation
+        headStyles: { fillColor: [249, 115, 22] },
       })
 
-      // Generate Data URI and trigger download manually
-      // For small files (~25KB), Data URI is extremely reliable for forcing correct naming in Chrome
-      const dataUri = doc.output('dataurlstring')
-      const link = document.createElement('a')
-      const fileName = `historico-manutencoes-${format(new Date(), 'yyyy-MM-dd')}.pdf`
-      
-      link.href = dataUri
-      link.download = fileName
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
 
-      toast.success('PDF exportado com sucesso!')
+      // Abordagem: Abrir o PDF em uma nova aba para evitar interceptação de downloads por extensões no Chrome
+      const blob = doc.output('blob')
+      const blobUrl = URL.createObjectURL(blob)
+      window.open(blobUrl, '_blank')
+
+      toast.success('PDF gerado! Verifique a nova aba.')
     } catch (error) {
       console.error('Erro ao exportar PDF:', error)
-      toast.error('Ocorreu um erro ao gerar o PDF. Tente novamente.')
+      toast.error('Ocorreu um erro ao gerar o PDF. Verifique o console.')
     }
   }
+
+
 
   return (
     <div>

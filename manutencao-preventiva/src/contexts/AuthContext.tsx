@@ -1,6 +1,17 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react'
 import type { User, Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
+import toast from 'react-hot-toast'
+
+const ALLOWED_EMAILS = [
+  'marcelo.engvs@gmail.com',
+  'marcelo.sousa@ufg.br',
+  'geovaneumarques@gmail.com',
+  'pedro_schaitl@ufg.br',
+  'lauraduarte@ufg.br',
+  'raquel_machtue@ufg.br',
+  'mscarriao@ufg.br'
+]
 
 interface AuthState {
   user: User | null
@@ -26,11 +37,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false)
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, s) => {
+      if (s?.user?.email && !ALLOWED_EMAILS.includes(s.user.email.toLowerCase())) {
+        await supabase.auth.signOut()
+        setSession(null)
+        setUser(null)
+        toast.error('E-mail não autorizado para acesso.')
+        setLoading(false)
+        return
+      }
       setSession(s)
       setUser(s?.user ?? null)
       setLoading(false)
     })
+
 
     return () => subscription.unsubscribe()
   }, [])
@@ -40,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { 
-        redirectTo: `${origin}/dashboard`,
+        redirectTo: `${origin}/home`,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',
@@ -49,13 +69,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
+
   const signInWithEmail = useCallback(async (email: string, password: string) => {
+    if (!ALLOWED_EMAILS.includes(email.toLowerCase())) {
+      return { error: 'Este e-mail não possui autorização de acesso.' }
+    }
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     return { error: error?.message ?? null }
   }, [])
 
   const signUpWithEmail = useCallback(async (email: string, password: string, nome: string) => {
+    if (!ALLOWED_EMAILS.includes(email.toLowerCase())) {
+      return { error: 'Este e-mail não possui autorização para criar conta.' }
+    }
     const { error } = await supabase.auth.signUp({
+
       email,
       password,
       options: { data: { full_name: nome } },

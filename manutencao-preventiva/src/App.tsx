@@ -11,6 +11,7 @@ import Protocolos from './pages/Protocolos'
 import Agenda from './pages/Agenda'
 import Executar from './pages/Executar'
 import Historico from './pages/Historico'
+import Home from './pages/Home'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -29,6 +30,14 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route 
+              path="/home" 
+              element={
+                <ProtectedRoute>
+                  <Home />
+                </ProtectedRoute>
+              } 
+            />
             <Route
               path="/"
               element={
@@ -37,7 +46,7 @@ export default function App() {
                 </ProtectedRoute>
               }
             >
-              <Route index element={<Navigate to="/dashboard" replace />} />
+              <Route index element={<Navigate to="/home" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="equipamentos" element={<Equipamentos />} />
               <Route path="protocolos" element={<Protocolos />} />
@@ -45,7 +54,7 @@ export default function App() {
               <Route path="executar" element={<Executar />} />
               <Route path="historico" element={<Historico />} />
             </Route>
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/home" replace />} />
           </Routes>
         </BrowserRouter>
         <Toaster
