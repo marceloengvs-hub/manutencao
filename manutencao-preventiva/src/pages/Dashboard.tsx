@@ -115,55 +115,34 @@ function DonutGauge({ value, size = 100, stroke = 10 }: { value: number; size?: 
 
 /* ────────── Equipment Bar Chart ────────── */
 
-function EquipmentBarChart({ data, maxH = 120 }: { data: { label: string; value: number }[]; maxH?: number }) {
+function EquipmentBarChart({ data, maxH = 140 }: { data: { label: string; value: number }[]; maxH?: number }) {
   const maxVal = Math.max(...data.map(d => d.value), 1)
-  const barW = 24
-  const gap = 16
-  const totalW = data.length * (barW + gap)
-  const padBottom = 48 // space for rotated labels
-  const chartH = maxH + padBottom
 
   return (
-    <div style={{ width: '100%', overflowX: 'auto', paddingBottom: 8 }} className="custom-scrollbar">
-      <svg width={Math.max(totalW + 16, 300)} height={chartH} style={{ overflow: 'visible', minWidth: '100%' }}>
-        {data.map((d, i) => {
-          const h = (d.value / maxVal) * maxH
-          const x = i * (barW + gap) + 8
-          const y = maxH - h
-          return (
-            <g key={i}>
-              {/* Bar */}
-              <rect
-                x={x} y={y} width={barW} height={h}
-                rx={2}
-                fill="rgba(249,115,22,0.4)"
-                style={{ transition: 'all 0.5s ease' }}
-                className="hover:fill-[var(--color-accent)] cursor-pointer"
+    <div style={{ maxHeight: maxH, width: '100%', overflowY: 'auto', paddingRight: 4 }} className="custom-scrollbar">
+      <div className="flex flex-col gap-3">
+        {data.map((d, i) => (
+          <div key={i} className="flex flex-col group">
+            <div className="flex justify-between items-end mb-1">
+              <span className="text-xs font-medium truncate pr-2 group-hover:text-[var(--color-text-heading)] transition-colors" style={{ color: 'var(--color-text-secondary)' }} title={d.label}>
+                {d.label}
+              </span>
+              <span className="text-xs font-mono font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                {d.value}
+              </span>
+            </div>
+            <div className="w-full h-1.5 rounded-sm overflow-hidden" style={{ background: 'var(--color-surface-elevated)' }}>
+              <div
+                className="h-full rounded-sm group-hover:bg-[var(--color-accent)] transition-colors duration-300"
+                style={{
+                  width: `${(d.value / maxVal) * 100}%`,
+                  background: 'rgba(249,115,22,0.6)',
+                }}
               />
-              <title>{d.label}: {d.value} manutenções</title>
-              {/* Value */}
-              {d.value > 0 && (
-                <text
-                  x={x + barW / 2} y={y - 6}
-                  textAnchor="middle" fontSize="10" fontWeight="600"
-                  fill="var(--color-text-heading)"
-                >
-                  {d.value}
-                </text>
-              )}
-              {/* Label rotated */}
-              <text
-                x={x + barW / 2} y={maxH + 12}
-                textAnchor="end" fontSize="9" fontWeight="500"
-                fill="var(--color-text-muted)"
-                transform={`rotate(-45, ${x + barW / 2}, ${maxH + 12})`}
-              >
-                {d.label.length > 14 ? d.label.substring(0, 12) + '...' : d.label}
-              </text>
-            </g>
-          )
-        })}
-      </svg>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -375,8 +354,8 @@ export default function Dashboard() {
             <h2 className="text-base font-semibold" style={{ color: 'var(--color-text-heading)' }}>Por Equipamento</h2>
             <span className="text-xs ml-auto" style={{ color: 'var(--color-text-muted)' }}>Total</span>
           </div>
-          <div className="flex-1 flex items-end">
-            <EquipmentBarChart data={equipDistribution} maxH={90} />
+          <div className="flex-1 min-h-[140px]">
+            <EquipmentBarChart data={equipDistribution} maxH={150} />
           </div>
         </div>
 
