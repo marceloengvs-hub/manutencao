@@ -113,6 +113,61 @@ function DonutGauge({ value, size = 100, stroke = 10 }: { value: number; size?: 
   )
 }
 
+/* ────────── Equipment Bar Chart ────────── */
+
+function EquipmentBarChart({ data, maxH = 120 }: { data: { label: string; value: number }[]; maxH?: number }) {
+  const maxVal = Math.max(...data.map(d => d.value), 1)
+  const barW = 24
+  const gap = 16
+  const totalW = data.length * (barW + gap)
+  const padBottom = 48 // space for rotated labels
+  const chartH = maxH + padBottom
+
+  return (
+    <div style={{ width: '100%', overflowX: 'auto', paddingBottom: 8 }} className="custom-scrollbar">
+      <svg width={Math.max(totalW + 16, 300)} height={chartH} style={{ overflow: 'visible', minWidth: '100%' }}>
+        {data.map((d, i) => {
+          const h = (d.value / maxVal) * maxH
+          const x = i * (barW + gap) + 8
+          const y = maxH - h
+          return (
+            <g key={i}>
+              {/* Bar */}
+              <rect
+                x={x} y={y} width={barW} height={h}
+                rx={2}
+                fill="rgba(249,115,22,0.4)"
+                style={{ transition: 'all 0.5s ease' }}
+                className="hover:fill-[var(--color-accent)] cursor-pointer"
+              />
+              <title>{d.label}: {d.value} manutenções</title>
+              {/* Value */}
+              {d.value > 0 && (
+                <text
+                  x={x + barW / 2} y={y - 6}
+                  textAnchor="middle" fontSize="10" fontWeight="600"
+                  fill="var(--color-text-heading)"
+                >
+                  {d.value}
+                </text>
+              )}
+              {/* Label rotated */}
+              <text
+                x={x + barW / 2} y={maxH + 12}
+                textAnchor="end" fontSize="9" fontWeight="500"
+                fill="var(--color-text-muted)"
+                transform={`rotate(-45, ${x + barW / 2}, ${maxH + 12})`}
+              >
+                {d.label.length > 14 ? d.label.substring(0, 12) + '...' : d.label}
+              </text>
+            </g>
+          )
+        })}
+      </svg>
+    </div>
+  )
+}
+
 /* ════════════════ DASHBOARD ════════════════ */
 
 export default function Dashboard() {
@@ -165,6 +220,21 @@ export default function Dashboard() {
     if (total === 0) return 100
     return Math.round((concluidas / total) * 100)
   }, [manutencoes, concluidas, atrasadas])
+
+  /* ── Distribuição por Equipamento ── */
+  const equipDistribution = useMemo(() => {
+    if (!equipamentos || !manutencoes) return []
+    const counts: Record<string, { nome: string; count: number }> = {}
+    for (const eq of equipamentos) counts[eq.id] = { nome: eq.nome, count: 0 }
+    for (const m of manutencoes) {
+      if (m.status === 'concluida' && counts[m.equipamento_id]) {
+        counts[m.equipamento_id].count++
+      }
+    }
+    return Object.entries(counts)
+      .map(([id, v]) => ({ label: v.nome, value: v.count }))
+      .sort((a, b) => b.value - a.value)
+  }, [equipamentos, manutencoes])
 
   /* ── Ranking de equipamentos ── */
   const equipRanking = useMemo(() => {
@@ -283,8 +353,8 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ── 4. Gráfico + Taxa + Ranking (grid) ── */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
+      {/* ── 4. Gráfico + Distribuição + Taxa (grid) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
 
         {/* 4a. Gráfico de Evolução Mensal */}
         <div className="card xl:col-span-2 animate-fade-in" style={{ animationDelay: '100ms' }}>
@@ -298,8 +368,20 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* 4b. Taxa de Cumprimento */}
-        <div className="card flex flex-col items-center justify-center animate-fade-in" style={{ animationDelay: '200ms' }}>
+        {/* 4b. Distribuição por Equipamento */}
+        <div className="card xl:col-span-1 animate-fade-in flex flex-col" style={{ animationDelay: '150ms' }}>
+          <div className="flex items-center gap-2 mb-5">
+            <HardDrive size={18} style={{ color: 'var(--color-accent)' }} />
+            <h2 className="text-base font-semibold" style={{ color: 'var(--color-text-heading)' }}>Por Equipamento</h2>
+            <span className="text-xs ml-auto" style={{ color: 'var(--color-text-muted)' }}>Total</span>
+          </div>
+          <div className="flex-1 flex items-end">
+            <EquipmentBarChart data={equipDistribution} maxH={90} />
+          </div>
+        </div>
+
+        {/* 4c. Taxa de Cumprimento */}
+        <div className="card xl:col-span-1 flex flex-col items-center justify-center animate-fade-in" style={{ animationDelay: '200ms' }}>
           <div className="flex items-center gap-2 mb-5 self-start w-full">
             <Shield size={18} style={{ color: 'var(--color-accent)' }} />
             <h2 className="text-base font-semibold" style={{ color: 'var(--color-text-heading)' }}>Taxa de Cumprimento</h2>
