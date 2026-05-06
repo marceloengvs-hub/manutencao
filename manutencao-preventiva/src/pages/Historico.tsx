@@ -63,7 +63,9 @@ export default function Historico() {
       const matchStatus = !filterStatus || m.status === filterStatus
       const matchTipo = !filterTipo || m.tipo === filterTipo
       const matchCategoria = !filterCategoria || (m.equipamentos?.categoria_id === filterCategoria)
-      const matchDefeito = !filterComDefeito || (m.observacoes && m.observacoes.trim().length > 0)
+      
+      const obsStr = m.observacoes?.trim().toLowerCase() || ''
+      const matchDefeito = !filterComDefeito || (obsStr.length > 0 && obsStr !== 'ok')
 
       let matchDate = true
       if (filterDateStart || filterDateEnd) {
