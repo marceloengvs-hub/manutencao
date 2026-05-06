@@ -35,6 +35,7 @@ export default function Historico() {
   const [filterCategoria, setFilterCategoria] = useState('')
   const [filterDateStart, setFilterDateStart] = useState('')
   const [filterDateEnd, setFilterDateEnd] = useState('')
+  const [filterComDefeito, setFilterComDefeito] = useState(false)
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
   const [detailId, setDetailId] = useState<string | null>(null)
 
@@ -44,7 +45,7 @@ export default function Historico() {
     if (id) setDetailId(id)
   }, [searchParams])
 
-  const hasActiveFilters = !!(filterStatus || filterTipo || filterCategoria || filterDateStart || filterDateEnd)
+  const hasActiveFilters = !!(filterStatus || filterTipo || filterCategoria || filterDateStart || filterDateEnd || filterComDefeito)
 
   const filtered = useMemo(() => {
     if (!manutencoes) return []
@@ -62,6 +63,7 @@ export default function Historico() {
       const matchStatus = !filterStatus || m.status === filterStatus
       const matchTipo = !filterTipo || m.tipo === filterTipo
       const matchCategoria = !filterCategoria || (m.equipamentos?.categoria_id === filterCategoria)
+      const matchDefeito = !filterComDefeito || (m.observacoes && m.observacoes.trim().length > 0)
 
       let matchDate = true
       if (filterDateStart || filterDateEnd) {
@@ -76,9 +78,9 @@ export default function Historico() {
         }
       }
 
-      return matchSearch && matchStatus && matchTipo && matchCategoria && matchDate
+      return matchSearch && matchStatus && matchTipo && matchCategoria && matchDate && matchDefeito
     })
-  }, [manutencoes, search, filterStatus, filterTipo, filterCategoria, filterDateStart, filterDateEnd])
+  }, [manutencoes, search, filterStatus, filterTipo, filterCategoria, filterDateStart, filterDateEnd, filterComDefeito])
 
   const detailItem = manutencoes?.find(m => m.id === detailId) as ManutencaoWithRelations | undefined
 
@@ -103,6 +105,7 @@ export default function Historico() {
       if (filterDateStart || filterDateEnd) {
         filterText += ` | Período: ${filterDateStart ? format(new Date(filterDateStart + 'T00:00:00'), 'dd/MM/yyyy') : '...'} até ${filterDateEnd ? format(new Date(filterDateEnd + 'T00:00:00'), 'dd/MM/yyyy') : 'agora'}`
       }
+      if (filterComDefeito) filterText += ` | Com Observações`
       doc.text(filterText, 14, 30)
 
       const tableColumn = ["Equipamento", "Patrimônio", "Título", "Tipo", "Data", "Status", "Observações"]
@@ -176,7 +179,7 @@ export default function Historico() {
 
         {showAdvancedFilters && (
           <div className="mt-4 pt-4 border-t border-dashed" style={{ borderColor: 'var(--color-border-default)' }}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] font-bold uppercase tracking-wider px-1" style={{ color: 'var(--color-text-muted)' }}>Data Início</label>
                 <input type="date" className="form-input text-xs h-9" value={filterDateStart} onChange={e => setFilterDateStart(e.target.value)} />
@@ -210,6 +213,17 @@ export default function Historico() {
                   {categorias?.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
                 </select>
               </div>
+              <div className="flex flex-col justify-end gap-1.5 h-full">
+                <label className="flex items-center gap-2 cursor-pointer h-9 px-1">
+                  <input 
+                    type="checkbox" 
+                    className="rounded border-[var(--color-border-default)] text-[var(--color-accent)] focus:ring-[var(--color-accent)] bg-transparent"
+                    checked={filterComDefeito}
+                    onChange={e => setFilterComDefeito(e.target.checked)}
+                  />
+                  <span className="text-[11px] font-medium" style={{ color: 'var(--color-text-secondary)' }}>Com Observação</span>
+                </label>
+              </div>
             </div>
             
             {hasActiveFilters && (
@@ -221,6 +235,7 @@ export default function Historico() {
                     setFilterCategoria('')
                     setFilterDateStart('')
                     setFilterDateEnd('')
+                    setFilterComDefeito(false)
                   }}
                   className="text-[11px] font-medium flex items-center gap-1 hover:underline"
                   style={{ color: 'var(--color-status-danger)' }}
