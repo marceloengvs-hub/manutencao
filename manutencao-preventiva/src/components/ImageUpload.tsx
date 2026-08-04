@@ -30,31 +30,49 @@ export default function ImageUpload({ onUpload, multiple = false, previews = [],
     if (valid.length > 0) onUpload(valid)
   }, [onUpload])
 
+  const handleCameraClick = useCallback(() => {
+    // Reset the input value so the same file can be re-selected
+    if (cameraRef.current) {
+      cameraRef.current.value = ''
+      cameraRef.current.click()
+    }
+  }, [])
+
+  const handleGalleryClick = useCallback(() => {
+    if (inputRef.current) {
+      inputRef.current.value = ''
+      inputRef.current.click()
+    }
+  }, [])
+
   return (
     <div>
+      {/* Hidden file inputs — placed OUTSIDE the upload-zone to avoid event conflicts */}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        multiple={multiple}
+        className="hidden"
+        onChange={(e) => handleFiles(e.target.files)}
+      />
+      <input
+        ref={cameraRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => handleFiles(e.target.files)}
+      />
+
+      {/* Drag & drop zone — only handles drag events, no click handler */}
       <div
         className={`upload-zone ${dragging ? 'dragging' : ''}`}
-        onClick={() => inputRef.current?.click()}
+        style={{ cursor: 'default' }}
         onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
         onDragLeave={() => setDragging(false)}
         onDrop={(e) => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files) }}
       >
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/*"
-          multiple={multiple}
-          className="hidden"
-          onChange={(e) => handleFiles(e.target.files)}
-        />
-        <input
-          ref={cameraRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          className="hidden"
-          onChange={(e) => handleFiles(e.target.files)}
-        />
         {uploading ? (
           <div className="flex flex-col items-center gap-2">
             <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--color-accent)', borderTopColor: 'transparent' }} />
@@ -65,7 +83,7 @@ export default function ImageUpload({ onUpload, multiple = false, previews = [],
             <div className="flex gap-3">
               <button
                 type="button"
-                onClick={(e) => { e.stopPropagation(); cameraRef.current?.click() }}
+                onClick={handleCameraClick}
                 className="btn-secondary flex items-center gap-2 text-sm py-2"
                 style={{ background: 'var(--color-surface-hover)' }}
               >
@@ -73,7 +91,7 @@ export default function ImageUpload({ onUpload, multiple = false, previews = [],
               </button>
               <button
                 type="button"
-                onClick={(e) => { e.stopPropagation(); inputRef.current?.click() }}
+                onClick={handleGalleryClick}
                 className="btn-secondary flex items-center gap-2 text-sm py-2"
                 style={{ background: 'var(--color-surface-hover)' }}
               >
