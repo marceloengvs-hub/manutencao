@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { Upload, X, Image as ImageIcon, Camera } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -12,8 +12,6 @@ interface ImageUploadProps {
 
 export default function ImageUpload({ onUpload, multiple = false, previews = [], onRemovePreview, uploading }: ImageUploadProps) {
   const [dragging, setDragging] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const cameraRef = useRef<HTMLInputElement>(null)
 
   const handleFiles = useCallback((files: FileList | null) => {
     if (!files) return
@@ -30,42 +28,9 @@ export default function ImageUpload({ onUpload, multiple = false, previews = [],
     if (valid.length > 0) onUpload(valid)
   }, [onUpload])
 
-  const handleCameraClick = useCallback(() => {
-    // Reset the input value so the same file can be re-selected
-    if (cameraRef.current) {
-      cameraRef.current.value = ''
-      cameraRef.current.click()
-    }
-  }, [])
-
-  const handleGalleryClick = useCallback(() => {
-    if (inputRef.current) {
-      inputRef.current.value = ''
-      inputRef.current.click()
-    }
-  }, [])
-
   return (
     <div>
-      {/* Hidden file inputs — placed OUTSIDE the upload-zone to avoid event conflicts */}
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        multiple={multiple}
-        className="hidden"
-        onChange={(e) => handleFiles(e.target.files)}
-      />
-      <input
-        ref={cameraRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        onChange={(e) => handleFiles(e.target.files)}
-      />
-
-      {/* Drag & drop zone — only handles drag events, no click handler */}
+      {/* Drag & drop zone */}
       <div
         className={`upload-zone ${dragging ? 'dragging' : ''}`}
         style={{ cursor: 'default' }}
@@ -81,22 +46,41 @@ export default function ImageUpload({ onUpload, multiple = false, previews = [],
         ) : (
           <div className="flex flex-col items-center gap-3">
             <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={handleCameraClick}
-                className="btn-secondary flex items-center gap-2 text-sm py-2"
+              {/* Native label for direct hardware gesture: Camera */}
+              <label
+                className="btn-secondary flex items-center gap-2 text-sm py-2 cursor-pointer select-none"
                 style={{ background: 'var(--color-surface-hover)' }}
               >
                 <Camera size={16} /> Tirar Foto
-              </button>
-              <button
-                type="button"
-                onClick={handleGalleryClick}
-                className="btn-secondary flex items-center gap-2 text-sm py-2"
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="sr-only"
+                  onChange={(e) => {
+                    handleFiles(e.target.files)
+                    e.target.value = ''
+                  }}
+                />
+              </label>
+
+              {/* Native label for direct gesture: Gallery */}
+              <label
+                className="btn-secondary flex items-center gap-2 text-sm py-2 cursor-pointer select-none"
                 style={{ background: 'var(--color-surface-hover)' }}
               >
                 <ImageIcon size={16} /> Galeria
-              </button>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple={multiple}
+                  className="sr-only"
+                  onChange={(e) => {
+                    handleFiles(e.target.files)
+                    e.target.value = ''
+                  }}
+                />
+              </label>
             </div>
             <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Arraste imagens ou clique nas opções. Máx 5MB.</span>
           </div>
