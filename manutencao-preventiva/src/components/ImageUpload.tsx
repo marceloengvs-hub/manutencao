@@ -29,66 +29,75 @@ export default function ImageUpload({ onUpload, multiple = false, previews = [],
   }, [onUpload])
 
   return (
-    <div>
-      {/* Drag & drop zone */}
+    <div className="flex flex-col gap-3">
+      {/* Inputs nativos ocultos vinculados por ID */}
+      <input
+        id="camera-input-capture"
+        type="file"
+        accept="image/*"
+        capture="environment"
+        style={{ display: 'none' }}
+        onChange={(e) => {
+          handleFiles(e.target.files)
+          e.target.value = ''
+        }}
+      />
+      <input
+        id="gallery-input-file"
+        type="file"
+        accept="image/*"
+        multiple={multiple}
+        style={{ display: 'none' }}
+        onChange={(e) => {
+          handleFiles(e.target.files)
+          e.target.value = ''
+        }}
+      />
+
+      {/* Botões de ação direta (Separados da zona de drag&drop) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <label
+          htmlFor="camera-input-capture"
+          className="btn-primary flex items-center justify-center gap-2 py-3 px-4 rounded font-medium text-sm cursor-pointer select-none text-white shadow-sm"
+          style={{ backgroundColor: 'var(--color-accent)' }}
+        >
+          <Camera size={18} />
+          <span>Tirar Foto</span>
+        </label>
+
+        <label
+          htmlFor="gallery-input-file"
+          className="btn-secondary flex items-center justify-center gap-2 py-3 px-4 rounded font-medium text-sm cursor-pointer select-none"
+          style={{ background: 'var(--color-surface-hover)', border: '1px solid var(--color-border-default)' }}
+        >
+          <ImageIcon size={18} />
+          <span>Escolher da Galeria</span>
+        </label>
+      </div>
+
+      {/* Area de Drag & Drop (opcional/desktop) */}
       <div
         className={`upload-zone ${dragging ? 'dragging' : ''}`}
-        style={{ cursor: 'default' }}
+        style={{ cursor: 'default', padding: '1rem' }}
         onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
         onDragLeave={() => setDragging(false)}
         onDrop={(e) => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files) }}
       >
         {uploading ? (
-          <div className="flex flex-col items-center gap-2">
-            <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--color-accent)', borderTopColor: 'transparent' }} />
-            <span className="text-sm">Enviando...</span>
+          <div className="flex items-center justify-center gap-2 py-1">
+            <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--color-accent)', borderTopColor: 'transparent' }} />
+            <span className="text-sm">Enviando imagem...</span>
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-3">
-            <div className="flex gap-3">
-              {/* Native label for direct hardware gesture: Camera */}
-              <label
-                className="btn-secondary flex items-center gap-2 text-sm py-2 cursor-pointer select-none"
-                style={{ background: 'var(--color-surface-hover)' }}
-              >
-                <Camera size={16} /> Tirar Foto
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  className="sr-only"
-                  onChange={(e) => {
-                    handleFiles(e.target.files)
-                    e.target.value = ''
-                  }}
-                />
-              </label>
-
-              {/* Native label for direct gesture: Gallery */}
-              <label
-                className="btn-secondary flex items-center gap-2 text-sm py-2 cursor-pointer select-none"
-                style={{ background: 'var(--color-surface-hover)' }}
-              >
-                <ImageIcon size={16} /> Galeria
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple={multiple}
-                  className="sr-only"
-                  onChange={(e) => {
-                    handleFiles(e.target.files)
-                    e.target.value = ''
-                  }}
-                />
-              </label>
-            </div>
-            <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Arraste imagens ou clique nas opções. Máx 5MB.</span>
-          </div>
+          <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+            Ou arraste e solte arquivos de imagem aqui (máx 10MB)
+          </span>
         )}
       </div>
 
+      {/* Previews de fotos anexadas */}
       {previews.length > 0 && (
-        <div className="flex flex-wrap gap-3 mt-4">
+        <div className="flex flex-wrap gap-3 mt-2">
           {previews.map((src, i) => (
             <div key={i} className="relative group w-20 h-20 overflow-hidden" style={{ borderRadius: '2px', border: '1px solid var(--color-border-default)' }}>
               {src.startsWith('blob:') || src.startsWith('http') ? (
@@ -100,8 +109,9 @@ export default function ImageUpload({ onUpload, multiple = false, previews = [],
               )}
               {onRemovePreview && (
                 <button
-                  onClick={(e) => { e.stopPropagation(); onRemovePreview(i) }}
-                  className="absolute top-0.5 right-0.5 w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  type="button"
+                  onClick={() => onRemovePreview(i)}
+                  className="absolute top-0.5 right-0.5 w-5 h-5 flex items-center justify-center opacity-80 hover:opacity-100 transition-opacity"
                   style={{ background: 'rgba(0,0,0,0.7)', borderRadius: '2px', border: 'none', cursor: 'pointer', color: '#fff' }}
                 >
                   <X size={12} />
