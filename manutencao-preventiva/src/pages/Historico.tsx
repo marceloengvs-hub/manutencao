@@ -60,12 +60,14 @@ export default function Historico() {
         m.titulo.toLowerCase().includes(search.toLowerCase()) ||
         tecnicoNome.toLowerCase().includes(search.toLowerCase())
 
-      const matchStatus = !filterStatus || m.status === filterStatus
+      const matchStatus = filterStatus ? m.status === filterStatus : m.status !== 'cancelada'
       const matchTipo = !filterTipo || m.tipo === filterTipo
       const matchCategoria = !filterCategoria || (m.equipamentos?.categoria_id === filterCategoria)
       
-      const obsStr = m.observacoes?.trim().toLowerCase() || ''
-      const matchDefeito = !filterComDefeito || (obsStr.length > 0 && obsStr !== 'ok')
+      const obsRaw = (m.observacoes ?? '').trim()
+      const obsNorm = obsRaw.toLowerCase().replace(/[.,!?\-–—:;]+$/g, '').trim()
+      const okVariants = ['', 'ok', 'tudo ok', 'tudo certo', 'sem observação', 'sem observações', 'sem obs', 'nenhuma', 'n/a', '-', '--', '---']
+      const matchDefeito = !filterComDefeito || (obsRaw.length > 0 && !okVariants.includes(obsNorm) && m.status !== 'cancelada')
 
       let matchDate = true
       if (filterDateStart || filterDateEnd) {
