@@ -66,9 +66,17 @@ export default function Dashboard() {
   const detailItem = manutencoes?.find(m => m.id === selectedDetailId)
 
   const now = new Date()
+  const currentDay = now.getDate()
   const monthStart = startOfMonth(now)
-  const prevMonthStart = startOfMonth(subMonths(now, 1))
-  const prevMonthEnd = endOfMonth(subMonths(now, 1))
+
+  // Comparação MTD justa: mesmo período do mês anterior (ex: até dia 03 do mês anterior)
+  const prevMonth = subMonths(now, 1)
+  const prevMonthStart = startOfMonth(prevMonth)
+  const daysInPrevMonth = new Date(prevMonth.getFullYear(), prevMonth.getMonth() + 1, 0).getDate()
+  const cutoffDay = Math.min(currentDay, daysInPrevMonth)
+  const prevMonthCutoff = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), cutoffDay, 23, 59, 59, 999)
+  const prevMonthFullEnd = endOfMonth(prevMonth)
+
   const yearStart = startOfYear(now)
   const weekEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
 
@@ -81,24 +89,30 @@ export default function Dashboard() {
   const ativas = equipamentos?.filter(e => e.status === 'ativo').length ?? 0
   const taxaOperacional = totalMaquinas > 0 ? Math.round((ativas / totalMaquinas) * 100) : 100
 
-  // Manutenções concluídas no mês corrente
+  // Manutenções concluídas no mês corrente (Month-to-Date: do dia 1 até agora)
   const concluidasMes = manutencoes?.filter(
     m => m.status === 'concluida' && new Date(m.completed_at ?? m.created_at) >= monthStart,
   ).length ?? 0
 
-  // Manutenções concluídas no mês anterior (para cálculo de MoM)
-  const concluidasMesAnterior = manutencoes?.filter(
+  // Manutenções no mesmo período do mês anterior (do dia 1 até o mesmo dia de corte)
+  const concluidasMesAnteriorMTD = manutencoes?.filter(
     m => m.status === 'concluida' &&
-      isWithinInterval(new Date(m.completed_at ?? m.created_at), { start: prevMonthStart, end: prevMonthEnd }),
+      isWithinInterval(new Date(m.completed_at ?? m.created_at), { start: prevMonthStart, end: prevMonthCutoff }),
   ).length ?? 0
 
-  // Variação MoM (Month over Month)
+  // Total do mês anterior fechado (para referência comparativa)
+  const concluidasMesAnteriorTotal = manutencoes?.filter(
+    m => m.status === 'concluida' &&
+      isWithinInterval(new Date(m.completed_at ?? m.created_at), { start: prevMonthStart, end: prevMonthFullEnd }),
+  ).length ?? 0
+
+  // Variação MoM (Month over Month) baseada no mesmo período (MTD vs PMTD)
   const momGrowth = useMemo(() => {
-    if (concluidasMesAnterior === 0) {
+    if (concluidasMesAnteriorMTD === 0) {
       return concluidasMes > 0 ? 100 : 0
     }
-    return Math.round(((concluidasMes - concluidasMesAnterior) / concluidasMesAnterior) * 100)
-  }, [concluidasMes, concluidasMesAnterior])
+    return Math.round(((concluidasMes - concluidasMesAnteriorMTD) / concluidasMesAnteriorMTD) * 100)
+  }, [concluidasMes, concluidasMesAnteriorMTD])
 
   // Total de manutenções no ano corrente (2026)
   const totalAnoAtual = manutencoes?.filter(
@@ -301,9 +315,9 @@ export default function Dashboard() {
               {momGrowth >= 0 ? `+${momGrowth}%` : `${momGrowth}%`} MoM
             </div>
           </div>
-          <p className="text-[11px] text-white/40 mt-2 flex items-center justify-between">
-            <span>vs. mês anterior ({concluidasMesAnterior} un.)</span>
-            <span className="text-orange-400/80 font-medium">Ciclo Atual</span>
+          <p className="text-[11px] text-white/40 mt-2 flex items-center justify-between" title={`Mês anterior fechado: ${concluidasMesAnteriorTotal} un. no total`}>
+            <span>vs. mesmo período ant. (até dia {cutoffDay}: {concluidasMesAnteriorMTD} un.)</span>
+            <span className="text-orange-400/80 font-medium">MTD</span>
           </p>
         </div>
 
