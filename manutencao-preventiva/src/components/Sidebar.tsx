@@ -5,6 +5,7 @@ import {
   ClipboardList,
   CalendarClock,
   Wrench,
+  ShieldAlert,
   History,
   LogOut,
   ArrowLeft,
@@ -18,6 +19,7 @@ const NAV_ITEMS = [
   { path: '/protocolos', label: 'Protocolos', icon: ClipboardList },
   { path: '/agenda', label: 'Agenda', icon: CalendarClock },
   { path: '/executar', label: 'Executar', icon: Wrench },
+  { path: '/corretivas', label: 'Corretivas', icon: ShieldAlert },
   { path: '/historico', label: 'Histórico', icon: History },
 ]
 
