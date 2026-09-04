@@ -143,15 +143,6 @@ export default function Projetos() {
     })
   }, [projetos, search, filterParticipante, filterStatus, filterArea, filterRecurso, filterDivulgacao])
 
-  // KPIs
-  const totalProjetos = projetos?.length || 0
-  const concluidosCount = projetos?.filter(p => p.status === 'concluido').length || 0
-  const andamentoCount = projetos?.filter(p => p.status === 'em_andamento').length || 0
-  const totalHorasLaboratorio = useMemo(() => {
-    return (projetos || []).reduce((acc, p) => acc + (Number(p.duracao_horas) || 0), 0)
-  }, [projetos])
-  const divulgacaoAutorizadaCount = projetos?.filter(p => p.autoriza_divulgacao).length || 0
-
   // Cálculo exato de dias entre duas datas (sem o +1 que inflava os dias)
   const calculateDays = (dInicio: string, dTermino: string) => {
     if (!dInicio || !dTermino) return 0
@@ -163,6 +154,56 @@ export default function Projetos() {
     const diffDays = Math.round(diffTime / (1000 * 3600 * 24))
     return diffDays >= 0 ? diffDays : 0
   }
+
+  // KPIs
+  const totalProjetos = projetos?.length || 0
+  const concluidosCount = projetos?.filter(p => p.status === 'concluido').length || 0
+  const andamentoCount = projetos?.filter(p => p.status === 'em_andamento').length || 0
+  const divulgacaoAutorizadaCount = projetos?.filter(p => p.autoriza_divulgacao).length || 0
+
+  // Cálculo inteligente da Duração Total (alinhado se os projetos usam dias ou horas)
+  const kpiDuracao = useMemo(() => {
+    let totalH = 0
+    let totalD = 0
+    ;(projetos || []).forEach(p => {
+      const h = Number(p.duracao_horas) || 0
+      const d = Number(p.duracao_dias) || 0
+      if (h > 0) {
+        totalH += h
+      } else if (d > 0) {
+        totalD += d
+      } else if (p.data_inicio && p.data_termino) {
+        totalD += calculateDays(p.data_inicio, p.data_termino)
+      }
+    })
+
+    if (totalD > 0 && totalH === 0) {
+      return {
+        titulo: 'Duração Total',
+        valor: `${totalD} dias`,
+        subtitulo: 'Tempo acumulado de projetos'
+      }
+    }
+    if (totalH > 0 && totalD === 0) {
+      return {
+        titulo: 'Horas de Lab',
+        valor: `${totalH}h`,
+        subtitulo: 'Tempo operacional total'
+      }
+    }
+    if (totalD > 0 && totalH > 0) {
+      return {
+        titulo: 'Duração Total',
+        valor: `${totalD}d • ${totalH}h`,
+        subtitulo: 'Dias e horas acumuladas'
+      }
+    }
+    return {
+      titulo: 'Duração Total',
+      valor: '0 dias',
+      subtitulo: 'Tempo acumulado de projetos'
+    }
+  }, [projetos])
 
   // Estado para alternar se a medição é em Horas ou em Dias
   const [tipoMedicao, setTipoMedicao] = useState<'horas' | 'dias'>('horas')
@@ -492,14 +533,14 @@ export default function Projetos() {
           <p className="text-[10px] text-blue-400/70 mt-1">Em fabricação no lab</p>
         </div>
 
-        {/* Horas Dedicadas */}
+        {/* Duração Acumulada */}
         <div className="rounded-xl bg-[#111827]/80 backdrop-blur-md border border-white/[0.08] p-4 shadow-xl">
           <div className="flex items-center justify-between text-white/60 mb-1.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-white/50">Horas de Lab</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-white/50">{kpiDuracao.titulo}</span>
             <Award size={16} className="text-purple-400" />
           </div>
-          <span className="text-2xl font-black font-mono tracking-tight text-white">{totalHorasLaboratorio}h</span>
-          <p className="text-[10px] text-white/40 mt-1">Tempo operacional total</p>
+          <span className="text-2xl font-black font-mono tracking-tight text-white">{kpiDuracao.valor}</span>
+          <p className="text-[10px] text-white/40 mt-1">{kpiDuracao.subtitulo}</p>
         </div>
 
         {/* Divulgação Autorizada */}
