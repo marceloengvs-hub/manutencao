@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Wrench, PackageSearch, Calculator, LogOut, Building2, FolderGit2 } from 'lucide-react'
+import { Wrench, PackageSearch, Calculator, LogOut, Building2, FolderGit2, Presentation } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import BrandIcon from '../components/BrandIcon'
 
@@ -37,7 +37,7 @@ export default function Home() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl w-full mx-auto">
           
-          {/* Card: Manutenção */}
+          {/* Card 1: Manutenção (Ativo) */}
           <Link 
             to="/dashboard" 
             className="group relative rounded-xl p-8 transition-all duration-300 hover:-translate-y-1 flex flex-col items-center text-center overflow-hidden animate-fade-in"
@@ -60,7 +60,7 @@ export default function Home() {
             </p>
           </Link>
 
-          {/* Card: Projetos (NOVO ATIVO) */}
+          {/* Card 2: Projetos (Ativo) */}
           <Link 
             to="/projetos" 
             className="group relative rounded-xl p-8 transition-all duration-300 hover:-translate-y-1 flex flex-col items-center text-center overflow-hidden animate-fade-in"
@@ -83,9 +83,9 @@ export default function Home() {
             </p>
           </Link>
 
-          {/* Card: Insumos (Em Construção) */}
+          {/* Card 3: Insumos (Em Construção) */}
           <div 
-            className="relative rounded-xl p-10 flex flex-col items-center text-center overflow-hidden opacity-60 animate-fade-in"
+            className="relative rounded-xl p-8 flex flex-col items-center text-center overflow-hidden opacity-60 animate-fade-in"
             style={{ 
               background: 'var(--color-surface-panel)', 
               border: '1px solid var(--color-border-default)',
@@ -98,20 +98,20 @@ export default function Home() {
               </span>
             </div>
             <div 
-              className="w-20 h-20 rounded-full flex items-center justify-center mb-6"
+              className="w-16 h-16 rounded-full flex items-center justify-center mb-5"
               style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--color-text-muted)' }}
             >
-              <PackageSearch size={40} />
+              <PackageSearch size={32} />
             </div>
-            <h3 className="text-2xl font-bold mb-3" style={{ color: 'var(--color-text-heading)' }}>Insumos</h3>
-            <p className="text-base" style={{ color: 'var(--color-text-secondary)' }}>
+            <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--color-text-heading)' }}>Insumos</h3>
+            <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
               Controle de estoque, materiais consumíveis e rastreio de uso.
             </p>
           </div>
 
-          {/* Card: Orçamentos (Em Construção) */}
+          {/* Card 4: Orçamentos (Em Construção) */}
           <div 
-            className="relative rounded-xl p-10 flex flex-col items-center text-center overflow-hidden opacity-60 animate-fade-in"
+            className="relative rounded-xl p-8 flex flex-col items-center text-center overflow-hidden opacity-60 animate-fade-in"
             style={{ 
               background: 'var(--color-surface-panel)', 
               border: '1px solid var(--color-border-default)',
@@ -124,20 +124,20 @@ export default function Home() {
               </span>
             </div>
             <div 
-              className="w-20 h-20 rounded-full flex items-center justify-center mb-6"
+              className="w-16 h-16 rounded-full flex items-center justify-center mb-5"
               style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--color-text-muted)' }}
             >
-              <Calculator size={40} />
+              <Calculator size={32} />
             </div>
-            <h3 className="text-2xl font-bold mb-3" style={{ color: 'var(--color-text-heading)' }}>Orçamentos</h3>
-            <p className="text-base" style={{ color: 'var(--color-text-secondary)' }}>
+            <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--color-text-heading)' }}>Orçamentos</h3>
+            <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
               Cálculo de custos de serviços, peças e simulações para usuários.
             </p>
           </div>
 
-          {/* Card: Unidades (Em Construção) */}
+          {/* Card 5: Unidades (Em Construção) */}
           <div 
-            className="relative rounded-xl p-10 flex flex-col items-center text-center overflow-hidden opacity-60 animate-fade-in"
+            className="relative rounded-xl p-8 flex flex-col items-center text-center overflow-hidden opacity-60 animate-fade-in"
             style={{ 
               background: 'var(--color-surface-panel)', 
               border: '1px solid var(--color-border-default)',
@@ -150,14 +150,40 @@ export default function Home() {
               </span>
             </div>
             <div 
-              className="w-20 h-20 rounded-full flex items-center justify-center mb-6"
+              className="w-16 h-16 rounded-full flex items-center justify-center mb-5"
               style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--color-text-muted)' }}
             >
-              <Building2 size={40} />
+              <Building2 size={32} />
             </div>
-            <h3 className="text-2xl font-bold mb-3" style={{ color: 'var(--color-text-heading)' }}>Unidades</h3>
-            <p className="text-base" style={{ color: 'var(--color-text-secondary)' }}>
+            <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--color-text-heading)' }}>Unidades</h3>
+            <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
               Gestão de laboratórios parceiros, permissões e filiais do IPElab.
+            </p>
+          </div>
+
+          {/* Card 6: Oficinas (Em Construção) */}
+          <div 
+            className="relative rounded-xl p-8 flex flex-col items-center text-center overflow-hidden opacity-60 animate-fade-in"
+            style={{ 
+              background: 'var(--color-surface-panel)', 
+              border: '1px solid var(--color-border-default)',
+              animationDelay: '400ms'
+            }}
+          >
+            <div className="absolute top-4 right-4">
+              <span className="text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded bg-orange-500/10 text-orange-400 border border-orange-500/20">
+                Em Construção
+              </span>
+            </div>
+            <div 
+              className="w-16 h-16 rounded-full flex items-center justify-center mb-5"
+              style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--color-text-muted)' }}
+            >
+              <Presentation size={32} />
+            </div>
+            <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--color-text-heading)' }}>Oficinas</h3>
+            <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+              Cadastro de oficinas e workshops realizados, detalhamento de temas, ministrantes e participantes.
             </p>
           </div>
 
