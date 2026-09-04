@@ -152,15 +152,46 @@ export default function Projetos() {
   }, [projetos])
   const divulgacaoAutorizadaCount = projetos?.filter(p => p.autoriza_divulgacao).length || 0
 
+  // Cálculo exato de dias entre duas datas (sem o +1 que inflava os dias)
+  const calculateDays = (dInicio: string, dTermino: string) => {
+    if (!dInicio || !dTermino) return 0
+    const [y1, m1, day1] = dInicio.split('-').map(Number)
+    const [y2, m2, day2] = dTermino.split('-').map(Number)
+    const date1 = new Date(y1, m1 - 1, day1)
+    const date2 = new Date(y2, m2 - 1, day2)
+    const diffTime = date2.getTime() - date1.getTime()
+    const diffDays = Math.round(diffTime / (1000 * 3600 * 24))
+    return diffDays >= 0 ? diffDays : 0
+  }
+
+  // Estado para alternar se a medição é em Horas ou em Dias
+  const [tipoMedicao, setTipoMedicao] = useState<'horas' | 'dias'>('horas')
+
+  // Helper para formatar a duração de forma limpa (Horas OU Dias)
+  const formatarDuracao = (p: { duracao_horas?: number; duracao_dias?: number; data_inicio?: string; data_termino?: string | null }) => {
+    const horas = Number(p.duracao_horas) || 0
+    const dias = Number(p.duracao_dias) || 0
+
+    if (horas > 0) {
+      return `${horas} hora${horas > 1 ? 's' : ''}`
+    }
+    if (dias > 0) {
+      return `${dias} dia${dias > 1 ? 's' : ''}`
+    }
+    if (p.data_inicio && p.data_termino) {
+      const calc = calculateDays(p.data_inicio, p.data_termino)
+      return calc > 0 ? `${calc} dias` : '1 dia'
+    }
+    return '1 dia'
+  }
+
   // Cálculo automático de dias ao alterar datas
   const handleDataChange = (inicio: string, termino: string) => {
     setDataInicio(inicio)
     setDataTermino(termino)
     if (inicio && termino) {
-      try {
-        const diff = differenceInDays(new Date(termino), new Date(inicio))
-        if (diff >= 0) setDuracaoDias(diff + 1)
-      } catch {}
+      const diff = calculateDays(inicio, termino)
+      setDuracaoDias(diff)
     }
   }
 
@@ -193,8 +224,9 @@ export default function Projetos() {
     setStatus('em_andamento')
     setDataInicio(format(new Date(), 'yyyy-MM-dd'))
     setDataTermino('')
+    setTipoMedicao('horas')
     setDuracaoHoras(10)
-    setDuracaoDias(1)
+    setDuracaoDias(0)
     setDescricao('')
     setAutorizaDivulgacao(true)
     setParticipantesList([])
@@ -223,8 +255,13 @@ export default function Projetos() {
     setStatus(p.status)
     setDataInicio(p.data_inicio)
     setDataTermino(p.data_termino || '')
+    
+    // Identifica se a duração original era medida em Horas ou em Dias
+    const hasHoras = Number(p.duracao_horas) > 0
+    setTipoMedicao(hasHoras ? 'horas' : 'dias')
     setDuracaoHoras(p.duracao_horas || 0)
     setDuracaoDias(p.duracao_dias || 0)
+
     setDescricao(p.descricao || '')
     setAutorizaDivulgacao(p.autoriza_divulgacao)
     setParticipantesList(p.participantes || [])
@@ -261,6 +298,12 @@ export default function Projetos() {
         finalFotosApresentacao = [...finalFotosApresentacao, ...uploadedUrls]
       }
 
+      // Se for Horas, salva apenas Horas (dias = 0). Se for Dias, calcula/salva apenas Dias (horas = 0).
+      const finalHoras = tipoMedicao === 'horas' ? Number(duracaoHoras) || 0 : 0
+      const finalDias = tipoMedicao === 'dias' 
+        ? (Number(duracaoDias) || (dataInicio && dataTermino ? calculateDays(dataInicio, dataTermino) : 1)) 
+        : 0
+
       const payload = {
         titulo: titulo.trim(),
         numero_sei: numeroSei.trim() || null,
@@ -271,8 +314,8 @@ export default function Projetos() {
         status,
         data_inicio: dataInicio,
         data_termino: dataTermino || null,
-        duracao_horas: Number(duracaoHoras) || 0,
-        duracao_dias: Number(duracaoDias) || 0,
+        duracao_horas: finalHoras,
+        duracao_dias: finalDias,
         recursos_utilizados: recursosSelecionados,
         descricao: descricao.trim() || null,
         autoriza_divulgacao: autorizaDivulgacao,
@@ -335,7 +378,7 @@ export default function Projetos() {
         (p.participantes || []).join(', ') || 'N/A',
         p.area_atuacao,
         (p.recursos_utilizados || []).join(', ') || 'N/A',
-        `${p.duracao_horas || 0}h (${p.duracao_dias || 0}d)`,
+        formatarDuracao(p),
         p.status === 'concluido' ? 'Concluído' : 'Em Andamento',
         p.autoriza_divulgacao ? 'Sim' : 'Não'
       ])
@@ -702,16 +745,22 @@ export default function Projetos() {
                     </div>
                   )}
 
-                  {/* Prazos & Horas */}
+                  {/* Prazos & Duração */}
                   <div className="flex items-center justify-between text-xs text-white/50 bg-black/20 px-3 py-2 rounded-lg border border-white/5 mb-3">
                     <div className="flex items-center gap-1.5">
                       <Calendar size={13} className="text-white/40" />
                       <span>{dataInicioFmt} → {dataTerminoFmt}</span>
                     </div>
-                    <div className="flex items-center gap-2 font-mono">
-                      <span><strong>{proj.duracao_dias || 0}</strong> dias</span>
-                      <span>•</span>
-                      <span className="text-orange-400 font-bold">{proj.duracao_horas || 0} horas</span>
+                    <div className="flex items-center gap-1.5 font-mono">
+                      {Number(proj.duracao_horas) > 0 ? (
+                        <span className="text-orange-400 font-bold flex items-center gap-1">
+                          <Clock size={12} /> {formatarDuracao(proj)}
+                        </span>
+                      ) : (
+                        <span className="text-white/80 font-bold flex items-center gap-1">
+                          <Calendar size={12} /> {formatarDuracao(proj)}
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -972,29 +1021,69 @@ export default function Projetos() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-white/70 mb-1.5">
-                Duração (Horas / Dias)
+              <label className="block text-xs font-semibold text-white/70 mb-1.5 flex items-center justify-between">
+                <span>Duração</span>
+                <div className="flex items-center gap-1 bg-white/5 p-0.5 rounded border border-white/10 text-[10px]">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTipoMedicao('horas')
+                      if (!duracaoHoras) setDuracaoHoras(10)
+                    }}
+                    className={`px-2 py-0.5 rounded transition-colors cursor-pointer ${
+                      tipoMedicao === 'horas' ? 'bg-orange-500 text-white font-bold' : 'text-white/60 hover:text-white'
+                    }`}
+                  >
+                    Horas
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTipoMedicao('dias')
+                      if (dataInicio && dataTermino) {
+                        setDuracaoDias(calculateDays(dataInicio, dataTermino))
+                      } else if (!duracaoDias) {
+                        setDuracaoDias(1)
+                      }
+                    }}
+                    className={`px-2 py-0.5 rounded transition-colors cursor-pointer ${
+                      tipoMedicao === 'dias' ? 'bg-orange-500 text-white font-bold' : 'text-white/60 hover:text-white'
+                    }`}
+                  >
+                    Dias
+                  </button>
+                </div>
               </label>
-              <div className="flex items-center gap-1">
-                <input
-                  type="number"
-                  min="0"
-                  placeholder="Horas"
-                  value={duracaoHoras}
-                  onChange={e => setDuracaoHoras(Number(e.target.value))}
-                  className="w-1/2 px-2 py-2 text-xs rounded-lg bg-black/50 border border-white/15 text-white focus:outline-none focus:border-orange-500 font-mono text-center"
-                  title="Horas totais de laboratório"
-                />
-                <input
-                  type="number"
-                  min="0"
-                  placeholder="Dias"
-                  value={duracaoDias}
-                  onChange={e => setDuracaoDias(Number(e.target.value))}
-                  className="w-1/2 px-2 py-2 text-xs rounded-lg bg-black/50 border border-white/15 text-white focus:outline-none focus:border-orange-500 font-mono text-center"
-                  title="Dias corridos"
-                />
-              </div>
+
+              {tipoMedicao === 'horas' ? (
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="Ex: 10"
+                    value={duracaoHoras || ''}
+                    onChange={e => setDuracaoHoras(Number(e.target.value))}
+                    className="w-full pl-3 pr-14 py-2 text-xs rounded-lg bg-black/50 border border-white/15 text-white focus:outline-none focus:border-orange-500 font-mono"
+                  />
+                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] text-white/40 font-semibold pointer-events-none">
+                    horas
+                  </span>
+                </div>
+              ) : (
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="Ex: 31"
+                    value={duracaoDias || ''}
+                    onChange={e => setDuracaoDias(Number(e.target.value))}
+                    className="w-full pl-3 pr-12 py-2 text-xs rounded-lg bg-black/50 border border-white/15 text-white focus:outline-none focus:border-orange-500 font-mono"
+                  />
+                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] text-white/40 font-semibold pointer-events-none">
+                    dias
+                  </span>
+                </div>
+              )}
             </div>
 
             <div>
@@ -1193,8 +1282,9 @@ export default function Projetos() {
                 <p className="text-white/80">
                   <strong>Término:</strong> {detailItem.data_termino ? format(new Date(detailItem.data_termino), 'dd/MM/yyyy') : 'Em andamento'}
                 </p>
-                <p className="text-orange-400 font-bold font-mono">
-                  {detailItem.duracao_horas || 0} Horas de Laboratório ({detailItem.duracao_dias || 0} Dias)
+                <p className="text-orange-400 font-bold font-mono flex items-center gap-1.5">
+                  {Number(detailItem.duracao_horas) > 0 ? <Clock size={14} /> : <Calendar size={14} />}
+                  Duração: {formatarDuracao(detailItem)}
                 </p>
               </div>
             </div>
