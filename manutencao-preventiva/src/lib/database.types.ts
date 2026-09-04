@@ -160,6 +160,71 @@ export interface Database {
         }
         Update: Record<string, never>
       }
+      projetos: {
+        Row: {
+          id: string
+          titulo: string
+          numero_sei: string | null
+          interessado: string
+          orientador: string | null
+          participantes: string[]
+          area_atuacao: string
+          data_inicio: string
+          data_termino: string | null
+          duracao_horas: number
+          duracao_dias: number
+          recursos_utilizados: string[]
+          descricao: string | null
+          status: 'em_andamento' | 'concluido' | 'planejamento' | 'suspenso'
+          autoriza_divulgacao: boolean
+          fotos_objeto: string[]
+          fotos_apresentacao: string[]
+          created_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          titulo: string
+          numero_sei?: string | null
+          interessado: string
+          orientador?: string | null
+          participantes?: string[]
+          area_atuacao?: string
+          data_inicio?: string
+          data_termino?: string | null
+          duracao_horas?: number
+          duracao_dias?: number
+          recursos_utilizados?: string[]
+          descricao?: string | null
+          status?: 'em_andamento' | 'concluido' | 'planejamento' | 'suspenso'
+          autoriza_divulgacao?: boolean
+          fotos_objeto?: string[]
+          fotos_apresentacao?: string[]
+          created_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          titulo?: string
+          numero_sei?: string | null
+          interessado?: string
+          orientador?: string | null
+          participantes?: string[]
+          area_atuacao?: string
+          data_inicio?: string
+          data_termino?: string | null
+          duracao_horas?: number
+          duracao_dias?: number
+          recursos_utilizados?: string[]
+          descricao?: string | null
+          status?: 'em_andamento' | 'concluido' | 'planejamento' | 'suspenso'
+          autoriza_divulgacao?: boolean
+          fotos_objeto?: string[]
+          fotos_apresentacao?: string[]
+          updated_at?: string
+        }
+      }
     }
   }
 }
@@ -175,3 +240,7 @@ export type TarefaProtocoloInsert = Database['public']['Tables']['tarefas_protoc
 export type Manutencao = Database['public']['Tables']['manutencoes']['Row']
 export type ManutencaoInsert = Database['public']['Tables']['manutencoes']['Insert']
 export type Evidencia = Database['public']['Tables']['evidencias']['Row']
+export type Projeto = Database['public']['Tables']['projetos']['Row']
+export type ProjetoInsert = Database['public']['Tables']['projetos']['Insert']
+export type ProjetoUpdate = Database['public']['Tables']['projetos']['Update']
+

@@ -6,6 +6,7 @@ import {
   CalendarClock,
   Wrench,
   ShieldAlert,
+  FolderGit2,
   History,
   LogOut,
   ArrowLeft,
@@ -20,6 +21,7 @@ const NAV_ITEMS = [
   { path: '/agenda', label: 'Agenda', icon: CalendarClock },
   { path: '/executar', label: 'Executar', icon: Wrench },
   { path: '/corretivas', label: 'Corretivas', icon: ShieldAlert },
+  { path: '/projetos', label: 'Projetos', icon: FolderGit2 },
   { path: '/historico', label: 'Histórico', icon: History },
 ]
 

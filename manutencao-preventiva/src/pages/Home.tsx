@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Wrench, PackageSearch, Calculator, LogOut, Building2 } from 'lucide-react'
+import { Wrench, PackageSearch, Calculator, LogOut, Building2, FolderGit2 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import BrandIcon from '../components/BrandIcon'
 
@@ -16,7 +16,7 @@ export default function Home() {
         </div>
         <button 
           onClick={signOut}
-          className="btn-ghost text-sm px-3 py-1.5 flex items-center gap-2"
+          className="btn-ghost text-sm px-3 py-1.5 flex items-center gap-2 cursor-pointer"
           style={{ color: 'var(--color-text-muted)' }}
         >
           <LogOut size={16} />
@@ -26,7 +26,7 @@ export default function Home() {
 
       {/* Área Principal */}
       <main className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12">
-        <div className="text-center mb-12 animate-slide-up">
+        <div className="text-center mb-10 animate-slide-up">
           <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-3" style={{ color: 'var(--color-text-heading)' }}>
             Portal de Módulos
           </h2>
@@ -35,12 +35,12 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl w-full mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl w-full mx-auto">
           
           {/* Card: Manutenção */}
           <Link 
             to="/dashboard" 
-            className="group relative rounded-xl p-10 transition-all duration-300 hover:-translate-y-1 flex flex-col items-center text-center overflow-hidden animate-fade-in"
+            className="group relative rounded-xl p-8 transition-all duration-300 hover:-translate-y-1 flex flex-col items-center text-center overflow-hidden animate-fade-in"
             style={{ 
               background: 'var(--color-surface-panel)', 
               border: '1px solid var(--color-border-default)',
@@ -49,14 +49,37 @@ export default function Home() {
           >
             <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300 pointer-events-none" style={{ background: 'var(--color-accent)' }} />
             <div 
-              className="w-20 h-20 rounded-full flex items-center justify-center mb-6 transition-transform duration-300 group-hover:scale-110"
+              className="w-16 h-16 rounded-full flex items-center justify-center mb-5 transition-transform duration-300 group-hover:scale-110"
               style={{ background: 'var(--color-accent-muted)', color: 'var(--color-accent)' }}
             >
-              <Wrench size={40} />
+              <Wrench size={32} />
             </div>
-            <h3 className="text-2xl font-bold mb-3" style={{ color: 'var(--color-text-heading)' }}>Manutenção</h3>
-            <p className="text-base" style={{ color: 'var(--color-text-secondary)' }}>
+            <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--color-text-heading)' }}>Manutenção</h3>
+            <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
               Gestão de preventivas, corretivas, equipamentos e agenda do laboratório.
+            </p>
+          </Link>
+
+          {/* Card: Projetos (NOVO ATIVO) */}
+          <Link 
+            to="/projetos" 
+            className="group relative rounded-xl p-8 transition-all duration-300 hover:-translate-y-1 flex flex-col items-center text-center overflow-hidden animate-fade-in"
+            style={{ 
+              background: 'var(--color-surface-panel)', 
+              border: '1px solid var(--color-border-default)',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+            }}
+          >
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300 pointer-events-none" style={{ background: 'var(--color-accent)' }} />
+            <div 
+              className="w-16 h-16 rounded-full flex items-center justify-center mb-5 transition-transform duration-300 group-hover:scale-110"
+              style={{ background: 'var(--color-accent-muted)', color: 'var(--color-accent)' }}
+            >
+              <FolderGit2 size={32} />
+            </div>
+            <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--color-text-heading)' }}>Projetos</h3>
+            <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+              Portfólio de projetos do IPElab, participantes, processos SEI, recursos maker e relatórios.
             </p>
           </Link>
 

@@ -11,6 +11,7 @@ import Protocolos from './pages/Protocolos'
 import Agenda from './pages/Agenda'
 import Executar from './pages/Executar'
 import Corretivas from './pages/Corretivas'
+import Projetos from './pages/Projetos'
 import Historico from './pages/Historico'
 import Home from './pages/Home'
 
@@ -54,6 +55,7 @@ export default function App() {
               <Route path="agenda" element={<Agenda />} />
               <Route path="executar" element={<Executar />} />
               <Route path="corretivas" element={<Corretivas />} />
+              <Route path="projetos" element={<Projetos />} />
               <Route path="historico" element={<Historico />} />
             </Route>
             <Route path="*" element={<Navigate to="/home" replace />} />
