@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { useProjetos, useCreateProjeto, useUpdateProjeto, useDeleteProjeto } from '../hooks/useProjetos'
 import { useEquipamentos } from '../hooks/useEquipamentos'
@@ -12,7 +13,7 @@ import {
   FolderGit2, Plus, Search, Filter, Download, UserCheck,
   Calendar, Clock, ShieldCheck, ShieldAlert, Users, Wrench,
   CheckCircle2, XCircle, FileText, Image as ImageIcon, Eye,
-  Lock, Check, Trash2, Edit3, Sparkles, ExternalLink, X,
+  Lock, Check, Trash2, Edit3, Sparkles, ExternalLink, X, Maximize2,
   GraduationCap, Briefcase, Award, Presentation, ChevronRight
 } from 'lucide-react'
 import { format, differenceInDays } from 'date-fns'
@@ -1368,20 +1369,31 @@ export default function Projetos() {
 
             {/* Galerias de Fotos */}
             {(detailItem.fotos_objeto?.length > 0 || detailItem.fotos_apresentacao?.length > 0) && (
-              <div className="space-y-3 pt-2">
+              <div className="space-y-4 pt-2">
                 {detailItem.fotos_objeto?.length > 0 && (
                   <div>
-                    <span className="text-xs font-bold text-white/50 uppercase tracking-wider block mb-2">
-                      Fotos do Objeto / Protótipo
-                    </span>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-white/60 uppercase tracking-wider">
+                        Fotos do Objeto / Protótipo ({detailItem.fotos_objeto.length})
+                      </span>
+                      <span className="text-[10px] text-orange-400 font-medium">
+                        Clique na foto para ver em tamanho real
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
                       {detailItem.fotos_objeto.map((url, i) => (
                         <div
                           key={i}
-                          onClick={() => setPreviewImage({ url, title: `Objeto: ${detailItem.titulo}` })}
-                          className="aspect-square rounded-lg overflow-hidden border border-white/10 cursor-pointer hover:border-orange-500 transition-colors group relative"
+                          onClick={() => setPreviewImage({ url, title: `Objeto / Protótipo: ${detailItem.titulo}` })}
+                          className="aspect-square rounded-xl overflow-hidden border border-white/15 cursor-pointer hover:border-orange-500 transition-all group relative bg-black/40 shadow-md hover:scale-[1.02]"
+                          title="Clique para expandir em tamanho real"
                         >
-                          <img src={url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                          <img src={url} alt="" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                            <span className="px-2 py-1 rounded bg-black/70 text-[10px] font-bold text-white flex items-center gap-1 border border-white/20 shadow">
+                              <Maximize2 size={12} /> Expandir
+                            </span>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -1390,17 +1402,28 @@ export default function Projetos() {
 
                 {detailItem.fotos_apresentacao?.length > 0 && (
                   <div>
-                    <span className="text-xs font-bold text-white/50 uppercase tracking-wider block mb-2">
-                      Fotos da Apresentação / Pôster / Defesa
-                    </span>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-white/60 uppercase tracking-wider">
+                        Fotos da Apresentação / Pôster / Defesa ({detailItem.fotos_apresentacao.length})
+                      </span>
+                      <span className="text-[10px] text-orange-400 font-medium">
+                        Clique na foto para ver em tamanho real
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
                       {detailItem.fotos_apresentacao.map((url, i) => (
                         <div
                           key={i}
                           onClick={() => setPreviewImage({ url, title: `Apresentação: ${detailItem.titulo}` })}
-                          className="aspect-square rounded-lg overflow-hidden border border-white/10 cursor-pointer hover:border-orange-500 transition-colors group relative"
+                          className="aspect-square rounded-xl overflow-hidden border border-white/15 cursor-pointer hover:border-orange-500 transition-all group relative bg-black/40 shadow-md hover:scale-[1.02]"
+                          title="Clique para expandir em tamanho real"
                         >
-                          <img src={url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                          <img src={url} alt="" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                            <span className="px-2 py-1 rounded bg-black/70 text-[10px] font-bold text-white flex items-center gap-1 border border-white/20 shadow">
+                              <Maximize2 size={12} /> Expandir
+                            </span>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -1421,25 +1444,63 @@ export default function Projetos() {
         </Modal>
       )}
 
-      {/* ── Visualizador de Foto Expandida ── */}
-      {previewImage && (
+      {/* ── Visualizador de Foto Expandida em Tamanho Real (Lightbox com z-index 20000) ── */}
+      {previewImage && createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 cursor-pointer"
+          className="fixed inset-0 flex flex-col items-center justify-center bg-black/95 backdrop-blur-md p-2 sm:p-6 cursor-pointer animate-fade-in"
+          style={{ zIndex: 20000 }}
           onClick={() => setPreviewImage(null)}
         >
-          <div className="relative max-w-4xl max-h-[90vh] rounded-xl overflow-hidden border border-white/20 shadow-2xl bg-black/40">
-            <div className="p-3 bg-black/70 border-b border-white/10 flex items-center justify-between">
-              <span className="text-xs font-bold text-white truncate max-w-lg">{previewImage.title}</span>
-              <button
-                onClick={() => setPreviewImage(null)}
-                className="p-1 rounded text-white/60 hover:text-white transition-colors"
-              >
-                <X size={16} />
-              </button>
+          <div
+            className="relative max-w-6xl w-full max-h-[96vh] flex flex-col rounded-2xl overflow-hidden border border-white/20 shadow-2xl bg-[#0b0f19] cursor-default"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header da Barra Superior */}
+            <div className="px-4 py-3 bg-black/80 border-b border-white/10 flex items-center justify-between gap-3 shrink-0">
+              <div className="flex items-center gap-2 truncate">
+                <span className="w-2 h-2 rounded-full bg-orange-400 shrink-0" />
+                <span className="text-xs sm:text-sm font-bold text-white truncate">
+                  {previewImage.title}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <a
+                  href={previewImage.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors text-xs flex items-center gap-1.5 font-semibold"
+                  title="Abrir imagem original em resolução máxima numa nova aba"
+                >
+                  <ExternalLink size={14} />
+                  <span>Resolução Máxima</span>
+                </a>
+                <button
+                  onClick={() => setPreviewImage(null)}
+                  className="p-1.5 rounded-lg bg-white/10 hover:bg-rose-500/30 hover:text-rose-300 text-white transition-colors cursor-pointer"
+                  title="Fechar visualizador (Esc)"
+                >
+                  <X size={18} />
+                </button>
+              </div>
             </div>
-            <img src={previewImage.url} alt="" className="max-w-full max-h-[80vh] object-contain p-2" />
+
+            {/* Imagem Expandida em Tamanho Real / Alta Resolução */}
+            <div className="flex-1 overflow-auto flex items-center justify-center p-3 sm:p-6 bg-black/60 min-h-[50vh]">
+              <img
+                src={previewImage.url}
+                alt={previewImage.title}
+                className="max-w-full max-h-[82vh] w-auto h-auto object-contain rounded-lg shadow-2xl select-none"
+              />
+            </div>
+
+            {/* Rodapé Informativo */}
+            <div className="px-4 py-2 bg-black/60 border-t border-white/5 flex items-center justify-between text-[11px] text-white/50">
+              <span>Pressione <strong className="text-white/80">ESC</strong> ou clique fora da imagem para fechar.</span>
+              <span className="font-mono text-orange-400">IPElab Maker Gallery</span>
+            </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
