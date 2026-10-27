@@ -275,7 +275,9 @@ export function calculateSchedule(
   // Atualizado em: 02/06/2026.
   const deduped = new Map<string, ScheduleItem>()
   for (const item of items) {
-    const key = `${item.equipamentoId}::${item.nextDate.getTime()}`
+    // Chave única por equipamento, título do protocolo e data
+    // Evita descartar um protocolo mensal que coincida no mesmo dia com um semanal
+    const key = `${item.equipamentoId}::${item.titulo.toLowerCase().trim()}::${item.nextDate.getTime()}`
     const existing = deduped.get(key)
     if (!existing) {
       deduped.set(key, item)
